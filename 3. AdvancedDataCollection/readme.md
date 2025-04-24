@@ -5,6 +5,7 @@
   - System enumeration for privilege escalation
   - Credential gathering for stealing, privilege escalation or other lateral movement activities
   - In-memory and process credential gathering
+  - Clipboard stealing, browser, keylogger, ...
 
 - **Activities:**
   - Learn Filesystem Hierarchy Standard
