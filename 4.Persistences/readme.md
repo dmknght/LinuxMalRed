@@ -9,7 +9,7 @@
   - Schedule persistence:
     - systemd timer
     - cron
-  - Even trigger persistence:
+  - Event trigger persistence:
     - Shell config modification (`.bashrc`)
     - Udev rules
     - Hooking scripts (network hooking script for example)
@@ -17,3 +17,4 @@
 
 **Resources**:
   - **MySQL Plugin Load:** https://dev.mysql.com/doc/refman/8.4/en/plugin-loading.html
+  - **Systemd as user**: https://serverfault.com/questions/841099/systemd-grant-an-unprivileged-user-permission-to-alter-one-specific-service
