@@ -18,3 +18,7 @@
 **Resources**:
   - **MySQL Plugin Load:** https://dev.mysql.com/doc/refman/8.4/en/plugin-loading.html
   - **Systemd as user**: https://serverfault.com/questions/841099/systemd-grant-an-unprivileged-user-permission-to-alter-one-specific-service
+  - **System hook script locations:**
+    - `/etc/needrestart/hook.d/`
+    - `/etc/network/if-down.d/`
+    - `/etc/update-motd.d`
