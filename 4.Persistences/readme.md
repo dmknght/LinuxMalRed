@@ -13,3 +13,7 @@
     - Shell config modification (`.bashrc`)
     - Udev rules
     - Hooking scripts (network hooking script for example)
+
+
+**Resources**:
+  - **MySQL Plugin Load:** https://dev.mysql.com/doc/refman/8.4/en/plugin-loading.html
