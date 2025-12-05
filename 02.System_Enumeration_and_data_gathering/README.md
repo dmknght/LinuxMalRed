@@ -325,14 +325,14 @@ CONFIG_PATHS = [
     '/etc/cron.daily',
     '/etc/cron.weekly',
     '/etc/cron.monthly',
-    
+
     # Systemd Service Files
     '/etc/systemd/system',
     '/lib/systemd/system',
-    
+
     # Init.d/SysVinit Files
     '/etc/init.d',
-    
+
     # At Job Files (ít phổ biến hơn)
     '/var/spool/cron/atjobs', 
 ]
@@ -432,9 +432,26 @@ Bài tập:
  + Login persistence: chương trình được thực thi khi được boot TODO hoàn thiện
  + Vị trí càng ít người biết, càng khó bị phát hiện
 - Vị trí:
- + bashrc, ... (TODO list)
- + Kernel module, bootloader, firmware, ...
- + Advanced: memory only (?)
+    - **Activities:**
+    - Logon persistence
+        - System daemon
+        - X-11 auto start
+    - Schedule persistence:
+        - systemd timer
+        - cron
+    - Event trigger persistence:
+        - Shell config modification (`.bashrc`)
+        - Udev rules
+        - Hooking scripts (network hooking script for example)
+    **Resources**:
+    - **MySQL Plugin Load:** https://dev.mysql.com/doc/refman/8.4/en/plugin-loading.html
+    - **Systemd as user**: https://serverfault.com/questions/841099/systemd-grant-an-unprivileged-user-permission-to-alter-one-specific-service
+    - **System hook script locations:**
+        - `/etc/needrestart/hook.d/`
+        - `/etc/network/if-down.d/`
+        - `/etc/update-motd.d`
+    + Kernel module, bootloader, firmware, ...
+    + Advanced: Memory persistence (?)
 
 ### Example:
 - Thêm 1 entry persistence vào 1 bashrc (ở đây sử dụng ví dụ là `/tmp/.bashrc`).
