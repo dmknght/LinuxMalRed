@@ -41,3 +41,5 @@ TODO các thành phần chính:
 - Frameowrk controller: core
 - Modules
 - Team server
+
+TODO: lựa chọn ngôn ngữ viết client, ưu nhược điểm (base trên tính sẵn sàng, module, ..., và cả remote module execution)
