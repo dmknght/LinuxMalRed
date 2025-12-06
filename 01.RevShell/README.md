@@ -288,6 +288,74 @@ if __name__ == '__main__':
 </details>
 
 # 3. Interactive Shell và Non-Interactive Shell
+## Hạn chế thứ nhất
+- Hãy thử nghiệm reverse shell theo 2 kịch bản sau:
+    1. Chạy server và client trong code `02.simple_rev_shell`, sử dụng lệnh `ls -lah /usr/bin/`
+    2. Sử dụng `netcat` tạo server (ví dụ `nc -nvlp 9191`), và chạy client trong `02.simple_rev_shell`, chạy lệnh `ls -lah /usr/bin/`
+
+<details>
+<summary>Kết quả thử nghiệm</summary>
+
+- Khi chạy server viết bằng Py từ ví dụ, kết quả bị thiếu rất nhiều
+- Sử dụng `netcat` thì kết quả không bị thiếu.
+</details>
+
+<details>
+<summary>Phân tích nguyên nhân và phương hướng giải quyết</summary>
+
+- Dòng code `response = conn.recv(1024).decode('utf-8', errors='ignore')` chỉ đọc **1024** bytes từ buffer mạng. Như vậy, kết quả đưa ra màn hình bị thiếu.
+- Có cách nào đọc được toàn bộ dữ liệu với điều kiện số lượng byte là rất lớn và không biết trước?
+=> Giải thuật: Sử dụng vòng lặp vô hạn để liên tục lấy dữ liệu từ socket với độ dài BUFF_SIZE. Nếu lượng dữ liệu lấy dược có độ dài < BUFF_SIZE, đây là đoạn chunk cuối cùng và break.
+</details>
+
+<details>
+<summary>Giải quyết vấn đề</summary>
+- Giải thuật:
+
+```
+while True:
+    response = conn.recv(BUFF_SIZE).decode('utf-8')
+    print(response, end="")
+    if len(response) < BUFF_SIZE:
+        break
+```
+</details>
+
+<details>
+<summary>Giải thuật ở trên có lỗi gì không?</summary>
+
+Giải thuật ở trên có 1 điểm yếu trong logic: nếu chunk cuối có độ dài chính xác là `BUFF_SIZE`, cụ thể hơn: `len(data) + len('\n') == BUFF_SIZE`, chương trình tiếp tục thực hiện lấy `conn.recv(1024)` và bị treo.
+
+Nguyên nhân dẫn đến việc bị treo là do [Blocking Mode của socket](https://en.wikipedia.org/wiki/Berkeley_sockets#Blocking_and_non-blocking_mode) không return trừ khi nó nhận được dữ liệu. Trong khi đó, Non-Blocking return bất cứ dữ liệu nào trong buffer và lập tức tiếp tục. Chế độ Non-Blocking có thể gây ra lỗ hổng [Race-Condition](https://en.wikipedia.org/wiki/Race_condition). Tuy nhiên, ta có thể bật chế độ non blocking trong trường hợp này để lấy toàn bộ dữ liệu mà không lo bị treo. Ta sẽ trả lại chế độ blocking như cũ sau khi lấy hết dữ liệu.
+
+Đầu tiên, đưa code trở lại chế độ Blocking. Sử dụng kiểm tra chế độ getblocking để tránh set liên tục
+```
+if not conn.getblocking():
+    conn.setblocking(True)
+```
+
+Thêm điều kiện đổi chế độ blocking khi **response** có **length** bằng **BUFF_SIZE**
+
+```
+while True:
+    try:
+        response = conn.recv(BUFF_SIZE).decode('utf-8')
+        print(response, end="")
+
+        if len(response) == BUFF_SIZE and conn.getblocking():
+            conn.setblocking(False)
+        elif len(response) < BUFF_SIZE:
+            break
+    except BlockingIOError:
+        break
+```
+</details>
+
+===================== Phần dưới hoàn thiện sau.
+
+- PHía server: test case và giải pháp
+- Phía client: send 1 buffer quá lớn
+
 TODO: giải thích interactive và non interactive, kiểm chứng ví dụ
 phân biệt:
 - Interactive Có TTY, có prompt, hỗ trợ Ctrl+C, tab-complete, ...
@@ -308,8 +376,7 @@ while True:
     s.send(output.encode())
 
 ```
-Ví dụ phân biệt:
-- Giả sử chạy lệnh: `ls -lah /usr/bin/` -> non-interactive shell sẽ gửi toàn bộ -> bị cắt, vân vân. Interactive shell thì không bị (với directory to như system32 trên windows, interactive shell gửi hết data theo từng đoạn)
+
 - Chạy `sudo su -`, non-interactive shell bị hang còn interactive shell hoạt động bt
 
 Bài tập:
