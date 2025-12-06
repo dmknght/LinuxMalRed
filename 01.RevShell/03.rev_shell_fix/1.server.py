@@ -1,5 +1,4 @@
 import socket
-import sys
 
 # Cấu hình lắng nghe
 LISTEN_HOST = '0.0.0.0' # Lắng nghe trên tất cả các giao diện
@@ -44,19 +43,19 @@ def listener_server():
             # sử dụng setblocking(False) để break khi nhảy vào exception BlockingIOError, fix lỗi
             # hang server khi response có length == BUFF_SIZE
             if not conn.getblocking(): # Kiểm tra trạng thái blocking hiện tại để tránh call set liên tục
-              conn.setblocking(True)
+                conn.setblocking(True)
 
             while True:
-              try:
-                response = conn.recv(BUFF_SIZE).decode('utf-8')
-                print(response, end="")
+                try:
+                    response = conn.recv(BUFF_SIZE).decode('utf-8')
+                    print(response, end="")
 
-                if len(response) == BUFF_SIZE:
-                  conn.setblocking(False)
-                elif len(response) < BUFF_SIZE:
-                  break
-              except BlockingIOError:
-                break
+                    if len(response) == BUFF_SIZE:
+                        conn.setblocking(False)
+                    elif len(response) < BUFF_SIZE:
+                        break
+                except BlockingIOError:
+                    break
 
     except Exception as e:
         print(f"\n[-] Mất kết nối hoặc lỗi xảy ra: {e}")

@@ -1,5 +1,4 @@
 import socket
-import sys
 
 # Cấu hình lắng nghe
 LISTEN_HOST = '0.0.0.0' # Lắng nghe trên tất cả các giao diện
