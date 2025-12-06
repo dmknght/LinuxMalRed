@@ -241,8 +241,6 @@ if __name__ == '__main__':
 ```
 </details>
 
-Hãy viết code phía client và server
-
 <details>
 <summary>Code phía client</summary>
 
