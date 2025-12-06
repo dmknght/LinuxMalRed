@@ -50,7 +50,7 @@ def listener_server():
                     response = conn.recv(BUFF_SIZE).decode('utf-8')
                     print(response, end="")
 
-                    if len(response) == BUFF_SIZE:
+                    if len(response) == BUFF_SIZE and conn.getblocking():
                         conn.setblocking(False)
                     elif len(response) < BUFF_SIZE:
                         break
