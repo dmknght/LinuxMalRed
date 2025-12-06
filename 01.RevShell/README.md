@@ -20,8 +20,16 @@ Chương trình độc hại là những chương trình máy tính, có thể v
 - Phá hoại dữ liệu hoặc hệ thống hạ tầng: Destructor
 => Một phần mềm độc hại có thể bao gồm nhiều chức năng. Vì vậy, việc phân chia theo category chỉ mang tính chất tương đối.
 
+## Vài thông tin thú vị
+- [Samy Worm](https://en.wikipedia.org/wiki/Samy_(computer_worm)) do [Samy Kamkar](https://en.wikipedia.org/wiki/Samy_Kamkar) viết đã khai thác lỗ hổng Stored XSS trong nền tảng mạng xã hội MySpace. Chỉ sau 20 giờ, có hơn một triệu người dùng đã bị lây nhiễm.
+- Virus [Conficker](https://en.wikipedia.org/wiki/Conficker) khai thác lỗ hổng [MS08-067](https://www.cve.org/CVERecord?id=CVE-2008-4250) trong dịch vụ SMB của Windows OS và sử phương thức tấn công brute force để lây nhiễm.
+- Virus [Mirai](https://en.wikipedia.org/wiki/Mirai_(malware)) và các biến thể của nó tấn công các hệ thống máy chủ Linux, kể cả các thiết bị mạng chạy Linux, để tạo mạng lưới Botnet. Mirai và các biến thể sử dụng tấn công brute force vào dịch vụ SSH, kết hợp với các lỗ hổng trong dịch vụ quản trị của thiết bị mạng để lây lan. Mỗi biến thể sử dụng một số các exploit khác nhau.
+- Worm [Stuxnet](https://en.wikipedia.org/wiki/Stuxnet) là một chương trình được thiết kế đặc biệt để tấn công vào những cá nhân và hệ thống công nghiệp thuộc chương trình hạt nhân của Iran. Stuxnet và các biến thể có độ phức tạp cao đến mức các chuyên gia phân tích mã độc thời đó đánh giá là "vũ khí mạng". Có thể tìm hiểu sâu hơn trong [Phim tài liệu Zero Days](https://www.imdb.com/title/tt5446858/) và quyển sách [Vũ khí hoàn hảo](https://www.amazon.com/Perfect-Weapon-Sabotage-Fear-Cyber/dp/0451497899)
+
+
+
 ## Reverse shell
-Reverse Shell là loại backdoor cho phép:
+Reverse Shell là chương trình cho phép:
 - Máy nạn nhân tự kết nối ngược về máy Threat Actor.
 - Threat actor điều khiển từ xa qua lệnh hệ thống.
 
@@ -149,7 +157,7 @@ finally:
 Trong reverse shell:
 
 - Victim = client, khởi tạo kết nối.
-- Attacker = server, lắng nghe connection.
+- Threat actor = server, lắng nghe connection.
 </details>
 
 ## Sử dụng socket programming để viết reverse shell
