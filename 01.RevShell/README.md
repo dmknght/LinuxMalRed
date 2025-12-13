@@ -351,7 +351,8 @@ while True:
 <details>
 <summary>Code phía client có vấn đề gì gây ảnh hưởng đến tính ổn định không?</summary>
 
-Dòng `output = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)` lấy toàn bộ dữ liệu từ output lưu vào 1 biến và gửi đi. Trên lý thuyết, nếu dữ liệu output quá lớn có thể ảnh hưởng đến lượng memory mà client sử dụng, cũng như lưu lượng mạng để truyền tải file.
+1. Dòng `output = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)` lấy toàn bộ dữ liệu từ output lưu vào 1 biến và gửi đi. Trên lý thuyết, nếu dữ liệu output quá lớn có thể ảnh hưởng đến lượng memory mà client sử dụng, cũng như lưu lượng mạng để truyền tải file.
+2. Dòng `command = s.recv(1024).decode('utf-8')` cũng sẽ gây mất dữ liệu tương tự phía server nếu lệnh quá dài.
 </details>
 
 ## Vấn đề truyền dữ liệu bên phía client
@@ -457,6 +458,7 @@ Từ [định nghĩa các chế độ hoạt động của bash](https://en.wiki
 - Interactive mode (chế độ tương tác), thực hiện lấy dữ liệu từ stdin, đưa stdout và stderr ra stdin.
 - Non-Interactive mode (chế độ không tương tác) sẽ thực hiện 1 lệnh hoặc chuỗi lệnh mà không cần người dùng tương tác.
 (TODO bổ sung phần flag -i 1. Sử dụng flag `-i` để sử dụng interactive mode)
+
 ## Kiểm tra, chuyển đổi sang Interactive Mode
 Vậy, làm sao để có thể biết được shell hiện tại đang có interactive mode hay không? Tiến hành thử nghiệm bằng việc m ở đồng thời 3 reverse shell. Trên Linux, có thể sử dụng Tilix hoặc terminal emulator hỗ trợ chia nhiều cửa sổ.
 1. Mở reverse shell sử dụng python với server dùng lệnh `nc -nvlp 9191` và chạy script python
