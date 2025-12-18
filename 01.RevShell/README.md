@@ -545,16 +545,13 @@ Trên hệ thống Linux, có thể có rất nhiều shell khác nhau như: Bou
 Như vậy, tạm thời có thể kết luận Non-Interactive Shell có biến `$-` không chứa chuỗi `i` và biến `$PS1` rỗng hoặc nếu sử dụng Bourne Shell thì chỉ chứa ký tự `$`.
 
 ## Nâng cấp Non-Interactive Shell lên Pseudo-Interactive Shell
-```
-import pty
-pty.spawn("/bin/bash")
-```
-Tuy nhiên, sử dụng command line sẽ khác: `python3 -c 'import pty;pty.spawn("/bin/bash")'`
 
-`script -qc /bin/bash /dev/null`
+Từ những nghiên cứu trên, ta có thể thấy bản chất của reverse shell là điều khiển từ xa thông qua byte stream. Điều này đem lại nhiều bất lợi nếu so với shell thông thường. Theo lý thuyết của Pseudo Reverse shell, ta cần mở cặp process master - slave có thể communicate với byte stream từ socket. Theo như phân tích rất chi tiết của [blogger Yatsushi](https://yatsushi.com/blog/python-pty-spawn-demystified/), method [pty.spawn](https://yatsushi.com/blog/python-pty-spawn-demystified/) của python thực hiện việc tạo cặp descriptors `(server, master)` thông qua method [os.openpty](https://docs.python.org/3/library/os.html#os.openpty) và sử dụng [fork](https://github.com/python/cpython/blob/3.14/Lib/pty.py#L79) để tạo tiến trình slave. Để có thể communicate từ slave với master, method `pty.spawn` thực hiện [copy file descriptors](https://github.com/python/cpython/blob/3.14/Lib/pty.py#L93) trong private method `_copy` tương tự cách sử dụng `dup2` trong `ncat`. Điều này cho phép input / output của shell do slave quản lý redirect sang byte stream của socket connection.
 
-Bài tập:
-- Viết reverse shell với python nhưng sử có interactive shell
-- Tìm, đọc và giải thích code interactive reverse shell trên C
+- TODO: Thử nghiệm với `python3 -c 'import pty;pty.spawn("/bin/bash")'`.
+- TODO: thử nghiệm với `script -qc /bin/bash /dev/null` (require bdutils)
 
-## Tạo Interactive Reverse Shell
+
+## Tạo Pseudo TY Reverse Shell
+- Viết reverse shell với python nhưng sử có interactive shell (đã có code mẫu) -> thử chạy và so sánh
+- Thử viết reverse shell một số ngôn ngữ khác.
