@@ -1,5 +1,36 @@
 # Post exploitation and Lateral movement
 ## 1.1. Post Exploitation là gì?
+
+Tính đến hiện tại, chưa có một chuẩn định nghĩa nào dành cho Post-Exploitation. Tuy nhiên, theo như định nghĩa của (rapid7)[https://docs.rapid7.com/metasploit/about-post-exploitation/] thì Post-Exploitation bao gồm tất cả những hành động của threat actor sau khi threat actor thiết lập được phiên kiểm soát hệ thống từ xa. Việc thiết lập phiên kết nối có thể bởi các cách khai thác sau:
+1. Tấn công social engineering.
+2. Khai thác lỗ hổng bảo mật.
+3. Tấn công brute force.
+
+Nếu khai thác thành công, phiên kết nối có thể có quyền truy cập nằm trong 3 trường hợp sau:
+1. Quyền cao nhất của hệ thống (`root` hoặc `NT SYSTEM`), nhưng điều này khá hiếm (trừ trường hợp thiết bị IOT có mật khẩu của `root` là mật khẩu mặc định).
+2. Quyền của logon user.
+3. Quyền của daemon user chạy dịch vụ mạng, ví dụ `www-data` hoặc `nginx`.
+
+Như vậy, bước tiếp theo của threat actor sẽ là can thiệp vào tài nguyên hệ thống bị compromise nhằm:
+1. Tìm kiếm điểm yếu trong hệ thống để khai thác nhằm nâng cấp quyền kiểm soát hệ thống.
+2. Sửa đổi tài nguyên hệ thống nhằm duy trì khả năng kiểm soát từ xa để phòng trường hợp phiên hiện tại bị vô hiệu hóa.
+3. Thu thập và phân tích các thông tin nhạy cảm tồn tại trong hệ thống, từ đó làm bàn đạp để mở rộng phạm vi kiểm soát sang các hệ thống, dịch vụ hoặc tài nguyên khác có liên quan. Các dịch vụ này có thể là các dịch vụ mạng nội bộ của một công ty, hoặc một dịch vụ liên quan tới cá nhân như banking.
+
+TODO hoàn thiện phần này
+Trong hình dưới đây là [Mô hình thiết kế hệ thống của Netflix (được đăng bởi geeksforgeeks)](https://www.geeksforgeeks.org/system-design/system-design-netflix-a-complete-architecture/) -> Hệ thống phức tạp, init access được 1 hệ thống có thể nhảy sang hệ thống khác
+
+![Netflix's High level system architecture, geeksforgeeks](https://media.geeksforgeeks.org/wp-content/cdn-uploads/20210128214233/Netflix-High-Level-System-Architecture.png)
+
+Hình dưới là [Tech stack của netflix, bởi bytebytego](https://blog.bytebytego.com/p/ep76-netflixs-tech-stack) -> Nhiều tech khác nhau -> nhiều thông tin lưu trữ / misconfig / lỗ hổng ,...
+
+![Netflix's tech stack, bytebytego](https://substack-post-media.s3.amazonaws.com/public/images/a96d8b37-03f5-43b3-af22-bea2ee7a8ebb_1280x1810.jpeg)
+
+TODO: tìm hình chứng minh cho end user (home user)
+
+Như vậy, việc có quyền kiểm soát một hệ thống chưa phải là điểm kết thúc mà chỉ là một bàn đạp để có thể mở rộng tấn công lên một quy mô lớn hơn.
+
+# TODO: đưa đoạn midnset ở dưới lên, cộng thêm việc đưa ra một vài ảnh mô hình mạng nhằm chứng minh các luận điểm trên là đúng.
+
 Post exploitation là toàn bộ hoạt động sau khi đã có foothold (một điểm đứng trong target).
 Mục tiêu:
 - Khai thác tối đa quyền truy cập hiện có.
@@ -17,11 +48,20 @@ Ví dụ:
 
 ## 1.3. Mindset – Tư duy đúng trong Post Exploitation
 
+- Hiện tại đang chạy dưới quyền nào. Quyền này có thể xem được gì trên hệ thống => từ đó có thể làm được gì với những thông tin này
+Mindset:
+    - Credential có thể có khắp mọi nơi => có thể tìm kiếm và thu thập được.
+    - Có thể có nhiều vị trí trigger malicious file hoặc duy trì backdoor hoặc credential => có thể có nhiều cách để tạo phiên kiểm soát mới nhằm duy trì truy cập tới máy nạn nhân
+
+
+Việc thu thập thông tin có thể có rất nhiều thứ: kiểm tra file, network, ..., nhiều khi phải đưa thêm code để làm những việc này => noise, hệ thống bị treo hoặc chậm (do đang chạy tiến trình background), có log / alert khi write file.
+
 - Không gây noise, không làm hệ thống crash.
 - Thu thập dữ liệu → phân tích → hành động.
 - Không drop binary không cần thiết.
 - User thường để password khắp nơi.
 - Máy hiện tại có thể chỉ là bàn đạp.
+
 
 # 2 Gold-mining on Linux system
 ## 2.1. Credential Hunting
@@ -154,6 +194,7 @@ if __name__ == '__main__':
  + Cho phép sửa đổi cronjob hoặc service unit
  + Writable file / folder cho phép chèn mã độc
 - Cấp quá quyền cho phép: SUID binaries hoặc sudoders commands, Capabilities của file (Linux capability).
+TODO giari thích tại sao tìm trong default (usr/bin/), biến môi trường (add thêm?), opt (cài thêm)
 
 ### Example
 - Tạo script tìm suid binary (advanced: SUID bởi owner nào)
