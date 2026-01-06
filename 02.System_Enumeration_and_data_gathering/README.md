@@ -16,6 +16,8 @@ Như vậy, bước tiếp theo của threat actor sẽ là can thiệp vào tà
 2. Sửa đổi tài nguyên hệ thống nhằm duy trì khả năng kiểm soát từ xa để phòng trường hợp phiên hiện tại bị vô hiệu hóa.
 3. Thu thập và phân tích các thông tin nhạy cảm tồn tại trong hệ thống, từ đó làm bàn đạp để mở rộng phạm vi kiểm soát sang các hệ thống, dịch vụ hoặc tài nguyên khác có liên quan. Các dịch vụ này có thể là các dịch vụ mạng nội bộ của một công ty, hoặc một dịch vụ liên quan tới cá nhân như banking.
 
+Các hành động trên bao gồm các tactic Discovery, Credential Access, Collection, Persistence. Các thông tin thu thập được sẽ được sử dụng cho Lateral Movement, Privilege Escalation, Exfiltration.
+
 TODO hoàn thiện phần này
 Trong hình dưới đây là [Mô hình thiết kế hệ thống của Netflix (được đăng bởi geeksforgeeks)](https://www.geeksforgeeks.org/system-design/system-design-netflix-a-complete-architecture/) -> Hệ thống phức tạp, init access được 1 hệ thống có thể nhảy sang hệ thống khác
 
@@ -25,11 +27,22 @@ Hình dưới là [Tech stack của netflix, bởi bytebytego](https://blog.byte
 
 ![Netflix's tech stack, bytebytego](https://substack-post-media.s3.amazonaws.com/public/images/a96d8b37-03f5-43b3-af22-bea2ee7a8ebb_1280x1810.jpeg)
 
-TODO: tìm hình chứng minh cho end user (home user)
+Trong khi đó, các mối liên kết của một người với các dịch vụ online
+
+![User's connection with cyber services, Researchergate](https://www.researchgate.net/publication/366670283/figure/fig1/AS:11431281110503228@1672583926537/dentity-Management-Services-Digital-Identity-2020.ppm)
+
 
 Như vậy, việc có quyền kiểm soát một hệ thống chưa phải là điểm kết thúc mà chỉ là một bàn đạp để có thể mở rộng tấn công lên một quy mô lớn hơn.
 
 # TODO: đưa đoạn midnset ở dưới lên, cộng thêm việc đưa ra một vài ảnh mô hình mạng nhằm chứng minh các luận điểm trên là đúng.
+
+TODO: Mindset thu thập thông tin
+1. Tìm điểm yếu: misconfig, outdated software, custom software, ...
+2. Tìm credential access (cùng access với quyền, hoặc kết hợp misconfig)
+3. Tìm vị trí persistence khi ở các mức độ quyền khác nhau
+
+
+===================
 
 Post exploitation là toàn bộ hoạt động sau khi đã có foothold (một điểm đứng trong target).
 Mục tiêu:
