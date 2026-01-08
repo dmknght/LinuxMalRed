@@ -34,6 +34,23 @@ Trong khi đó, các mối liên kết của một người với các dịch v�
 
 Như vậy, việc có quyền kiểm soát một hệ thống chưa phải là điểm kết thúc mà chỉ là một bàn đạp để có thể mở rộng tấn công lên một quy mô lớn hơn.
 
+
+## Post-Exploitation từ góc nhìn của threat actor => system enumeration: thu thập thông tin hệ thống
+đầu tiên, phải thu thập thông tin hệ thống để phục vụ cho các bước tiếp theo -> có thể phải drop file, chạy nhiều enumeration gây noise => cần có giải pháp balance giữa thu thập thông tin và stealthy
+Mục tiêu tìm kiếm:
+1. Điểm yếu hệ thống: misconfig, outdated software, ... phục vụ cho việc nâng cao tối đa quyền
+2. Thông tin có giá trị: credentials, csac thông tin về hệ thống nội bộ, ...
+3. Các tài nguyên hỗ trợ cho việc duy trì kiểm soát
+
+## Credential collection => "mỏ vàng"
+
+## Persistence: Tìm kiếm vị trí mà threat actor có thể truy cập và kiểm soát
+
+## Priv esc: nâng cao
+
+## lateral movement: leo xa
+
+
 # TODO: đưa đoạn midnset ở dưới lên, cộng thêm việc đưa ra một vài ảnh mô hình mạng nhằm chứng minh các luận điểm trên là đúng.
 
 TODO: Mindset thu thập thông tin
@@ -85,6 +102,7 @@ Việc thu thập thông tin có thể có rất nhiều thứ: kiểm tra file,
 - Dev / sys admin có thể để credential yếu hoặc reuse
 
 ### Các nguồn phổ biến:
+TODO hệ thống vhost
 
 - Bash history: .bash_history
 - SSH keys: ~/.ssh/id_rsa, authorized_keys
