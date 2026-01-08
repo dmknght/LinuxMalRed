@@ -16,102 +16,112 @@ Như vậy, bước tiếp theo của threat actor sẽ là can thiệp vào tà
 2. Sửa đổi tài nguyên hệ thống nhằm duy trì khả năng kiểm soát từ xa để phòng trường hợp phiên hiện tại bị vô hiệu hóa.
 3. Thu thập và phân tích các thông tin nhạy cảm tồn tại trong hệ thống, từ đó làm bàn đạp để mở rộng phạm vi kiểm soát sang các hệ thống, dịch vụ hoặc tài nguyên khác có liên quan. Các dịch vụ này có thể là các dịch vụ mạng nội bộ của một công ty, hoặc một dịch vụ liên quan tới cá nhân như banking.
 
-Các hành động trên bao gồm các tactic Discovery, Credential Access, Collection, Persistence. Các thông tin thu thập được sẽ được sử dụng cho Lateral Movement, Privilege Escalation, Exfiltration.
+Các hành động trên bao gồm các tactic Discovery, Credential Access, Collection, Persistence. Các thông tin thu thập được sẽ được sử dụng cho Lateral Movement, Privilege Escalation, Exfiltration. Những tactic này được chia theo MITRE matrix.
 
-TODO hoàn thiện phần này
-Trong hình dưới đây là [Mô hình thiết kế hệ thống của Netflix (được đăng bởi geeksforgeeks)](https://www.geeksforgeeks.org/system-design/system-design-netflix-a-complete-architecture/) -> Hệ thống phức tạp, init access được 1 hệ thống có thể nhảy sang hệ thống khác
-
-![Netflix's High level system architecture, geeksforgeeks](https://media.geeksforgeeks.org/wp-content/cdn-uploads/20210128214233/Netflix-High-Level-System-Architecture.png)
-
-Hình dưới là [Tech stack của netflix, bởi bytebytego](https://blog.bytebytego.com/p/ep76-netflixs-tech-stack) -> Nhiều tech khác nhau -> nhiều thông tin lưu trữ / misconfig / lỗ hổng ,...
-
-![Netflix's tech stack, bytebytego](https://substack-post-media.s3.amazonaws.com/public/images/a96d8b37-03f5-43b3-af22-bea2ee7a8ebb_1280x1810.jpeg)
-
-Trong khi đó, các mối liên kết của một người với các dịch vụ online
+Để hình dung thực tế thì một hệ thống bị compromise có thể được chia làm 2 nhóm: máy người dùng cá nhân và máy người dùng doanh nghiệp. Đối với máy người dùng cá nhân, có rất nhiều dữ liệu số và các dịch vụ số.
 
 ![User's connection with cyber services, Researchergate](https://www.researchgate.net/publication/366670283/figure/fig1/AS:11431281110503228@1672583926537/dentity-Management-Services-Digital-Identity-2020.ppm)
 
+Không dừng lại ở đó, máy bị compromise còn có thể kết nối tới các thiết bị khác. Nếu nơi đang sống càng có nhiều thiết bị thông minh, thì tức là càng có nhiều thiết bị nằm trong phạm vi bị tấn công lây lan.
+
+![Smart home infographic, alamy](https://c7.alamy.com/comp/2EBY1FF/internet-of-things-smart-home-appliances-control-with-wearable-electronic-devices-colorful-isometric-infographic-poster-vector-illustration-2EBY1FF.jpg)
+
+Hoặc đối với hệ thống doanh nghiệp, mô hình thiết kế có thể rất phức tạp, đồng nghĩa với việc có nhiều hệ thống có nguy cơ bị xâm nhập nếu một máy trong mạng nội bộ bị kiểm soát từ xa.
+
+![Netflix's High level system architecture, geeksforgeeks](https://media.geeksforgeeks.org/wp-content/cdn-uploads/20210128214233/Netflix-High-Level-System-Architecture.png)
+
+Với một mô hình hệ thống như vậy, số lượng các dịch vụ hoặc công nghệ khác nhau được sử dụng cũng sẽ rất đa dạng. Một sai sót nhỏ trong cấu hình, hoặc mật khẩu lưu ở trên máy bị kiểm soát cũng có thể dẫn đến việc những hệ thống quan trọng bị kiểm soát.
+
+![Netflix's tech stack, bytebytego](https://substack-post-media.s3.amazonaws.com/public/images/a96d8b37-03f5-43b3-af22-bea2ee7a8ebb_1280x1810.jpeg)
 
 Như vậy, việc có quyền kiểm soát một hệ thống chưa phải là điểm kết thúc mà chỉ là một bàn đạp để có thể mở rộng tấn công lên một quy mô lớn hơn.
 
-
-## Post-Exploitation từ góc nhìn của threat actor => system enumeration: thu thập thông tin hệ thống
-đầu tiên, phải thu thập thông tin hệ thống để phục vụ cho các bước tiếp theo -> có thể phải drop file, chạy nhiều enumeration gây noise => cần có giải pháp balance giữa thu thập thông tin và stealthy
+## System enumeration: những thứ threat actor thu thập và phân tích.
+đầu tiên, phải thu thập thông tin hệ thống để phục vụ cho các bước tiếp theo
 Mục tiêu tìm kiếm:
-1. Điểm yếu hệ thống: misconfig, outdated software, ... phục vụ cho việc nâng cao tối đa quyền
-2. Thông tin có giá trị: credentials, csac thông tin về hệ thống nội bộ, ...
-3. Các tài nguyên hỗ trợ cho việc duy trì kiểm soát
+1. Thông tin về hệ thống: hiểu rõ hơn về hệ thống và tìm kiếm software chưa được vá lỗ hổng
+2. Tài nguyên có thể kiểm soát được (bởi quyền của phiên kiểm soát hiện tại): tìm kiếm điểm yếu hệ thống (mà threat actor có thể kiểm soát) nhằm nâng cao tối đa quyền, hoặc tìm kiếm credentials, hoặc thông tin nội bộ, hoặc chỉnh sửa dữ liệu để duy trì kiểm soát.
+
+Để thực hiện các công việc này, threat actor phải chạy một số đoạn lệnh đặc thù, có thể đi kèm trong backdoor đang được sử dụng, hoặc phải tải lên =>
+1. Nếu upload lên: dấu vết lưu file
+2. Nếu sử dụng phương pháp chạy lệnh hệ thống: show nhiều thứ trong process tree
+3. in memory: (liệu có vấn đề gì không?)
+
+Trong quá trình thực hiện, các hành động có thể có những hành vi khác nhau từ đọc file cho đến ghi file. Các hành động này chiếm dụng tài nguyên và có thể gây noise hệ thống, dễ bị phát hiện => cần stealthy.
+
 
 ## Credential collection => "mỏ vàng"
-
-## Persistence: Tìm kiếm vị trí mà threat actor có thể truy cập và kiểm soát
+- Ở level daemon user: thu thập được credential được ưeb app sử dụng: credential truy cập db của ưeb, có thể crednetial login vào web panel, ... thậm chí credential được web app sử dụng để kết nối tới dịch vụ bên ngoài. Ngoài ra, dev có thể lưu những credential tạm như trong source code, ...
+- level normal user: file password (dùng pahanf mềm uqanr lý password lưu), trình duyệt, các desktop app / web app, ... , ssh key, .. (tùy thuộc server hay desktop); tìm trong history của bash hoặc db command (ví dụ set password cố lưu history log của interpreter SQL)
+- git conffig, backup file, command đang chạy, ... (todo check vhost)
+- script chạy theo schedule có thể có crednetial plaintext do sys-admin sử dụng.
+- Credential yếu, reuse trong các hệ thống khác nhau
 
 ## Priv esc: nâng cao
+Khi sản phẩm được đưa vào quá trình vận hành, có thể có nhiều sai sót xảy ra dẫn đến lỗ hổng bảo mật:
+1. Hệ thống không được cập nhật security patches
+2. Hệ thống không được audit cẩn thận hoặc không được hardening đúng mức.
+3. Cấp thừa quyền để thực hiện một số chức năng nhất định dẫn đến low privilege user (hoặc daemon user) có thể can thiệp được resource của user khác. (một trong những mục tiêu sẽ là thay đổi luồng logic hoạt động của 1 chương trình để có thể nâng cấp khả năng kiểm soát hệ thống)
+4. Cập nhật và áp dụng phiên bản mới có thể phá vỡ cấu hình cũ (backward compability) hoặc chức năng được cập nhật xuất hiện lỗ hổng mới.
 
-## lateral movement: leo xa
+Ở trong module này, ta chỉ thực hiện công việc thu thập các điểm yếu (real world software exploitation học ở module sau)
 
-
-# TODO: đưa đoạn midnset ở dưới lên, cộng thêm việc đưa ra một vài ảnh mô hình mạng nhằm chứng minh các luận điểm trên là đúng.
-
-TODO: Mindset thu thập thông tin
-1. Tìm điểm yếu: misconfig, outdated software, custom software, ...
-2. Tìm credential access (cùng access với quyền, hoặc kết hợp misconfig)
-3. Tìm vị trí persistence khi ở các mức độ quyền khác nhau
-
-
-===================
-
-Post exploitation là toàn bộ hoạt động sau khi đã có foothold (một điểm đứng trong target).
-Mục tiêu:
-- Khai thác tối đa quyền truy cập hiện có.
-- Thu thập thông tin hữu ích cho các bước tiếp theo.
-- Mở rộng quyền, tìm tài sản giá trị, hoặc duy trì truy cập.
-- Không làm gián đoạn hệ thống (stealth).
-
-## 1.2. Lateral Movement là gì?
-Lateral movement là việc di chuyển sang các máy khác trong cùng mạng nội bộ sau khi đã chiếm được một máy ban đầu.
-
-Ví dụ:
-- Từ webserver → database.
-- Từ user machine → Domain Controller.
-- Từ container → host.
-
-## 1.3. Mindset – Tư duy đúng trong Post Exploitation
-
-- Hiện tại đang chạy dưới quyền nào. Quyền này có thể xem được gì trên hệ thống => từ đó có thể làm được gì với những thông tin này
-Mindset:
-    - Credential có thể có khắp mọi nơi => có thể tìm kiếm và thu thập được.
-    - Có thể có nhiều vị trí trigger malicious file hoặc duy trì backdoor hoặc credential => có thể có nhiều cách để tạo phiên kiểm soát mới nhằm duy trì truy cập tới máy nạn nhân
+=> Tactic thực hiện (TODO chuyển sang phần practice)
+- Mis-configuration dẫn đến lộ credential hoặc cho phép sửa đổi được tài nguyên hệ thống:
+ + Cho phép sửa đổi cronjob hoặc service unit
+ + Writable file / folder cho phép chèn mã độc
+- Cấp quá quyền cho phép: SUID binaries hoặc sudoders commands, Capabilities của file (Linux capability).
+TODO giari thích tại sao tìm trong default (usr/bin/), biến môi trường (add thêm?), opt (cài thêm)
+TODO: tận dụng tinh năng hệ thống và một số misconfig khác để thực hiện priv esc?
 
 
-Việc thu thập thông tin có thể có rất nhiều thứ: kiểm tra file, network, ..., nhiều khi phải đưa thêm code để làm những việc này => noise, hệ thống bị treo hoặc chậm (do đang chạy tiến trình background), có log / alert khi write file.
+## lateral movement: đi xa
+- Ở level daemon user: vẫn có thể xem được netstat để xem connection nội bộ, hoặc chạy được tool để scan trong network range
+- vẫn có thể xem xét một vài thông tin cơ bản
+- nếu có ưeb => xem được các thông tin về db, vhost, container, ... (hoặc credential tới các dịch vụ khác ví dụ cloud)
 
-- Không gây noise, không làm hệ thống crash.
-- Thu thập dữ liệu → phân tích → hành động.
-- Không drop binary không cần thiết.
-- User thường để password khắp nơi.
-- Máy hiện tại có thể chỉ là bàn đạp.
+## Persistence: Tìm kiếm vị trí mà threat actor có thể truy cập và kiểm soát
+Tại sao cần persistence?
+    - Duy trì quyền kiểm soát qua reboot, patch, hay incident response.
+    - Đảm bảo access ngay cả khi credential bị đổi hoặc machine / service bị restart
+
+Persistence ở những vị trí nào?
+=> Tùy theo quyền của phiên hiện tại mà có thể sử dụng các biện pháp khac nhau:
+- Đối với daemon user: để lại ưeb shell (todo: check có cách nào tạo persistence thông qua web server)
+- Đối với normal user: on event and on-logon ví dụ như bashrc, hoặc add thông tin vào ssh key, ... hoặc đối với X11 thì có chỗ khác, ...
+- System: ??
+
+=> một số vị trí
+ + Sẽ có những component sử dụng scripting, thực thi scripting. Ví dụ: ssh banner, hook script
+ + On-event persistence: Chương trình được thực thi khi 1 event nhất định được thực hiện TODO hoàn thiện
+ + Login persistence: chương trình được thực thi khi được boot TODO hoàn thiện
+ + Vị trí càng ít người biết, càng khó bị phát hiện
+- Vị trí:
+    - **Activities:**
+    - Logon persistence
+        - System daemon
+        - X-11 auto start
+    - Schedule persistence:
+        - systemd timer
+        - cron
+    - Event trigger persistence:
+        - Shell config modification (`.bashrc`)
+        - Udev rules
+        - Hooking scripts (network hooking script for example)
+    **Resources**:
+    - **MySQL Plugin Load:** https://dev.mysql.com/doc/refman/8.4/en/plugin-loading.html
+    - **Systemd as user**: https://serverfault.com/questions/841099/systemd-grant-an-unprivileged-user-permission-to-alter-one-specific-service
+    - **System hook script locations:**
+        - `/etc/needrestart/hook.d/`
+        - `/etc/network/if-down.d/`
+        - `/etc/update-motd.d`
+    + Kernel module, bootloader, firmware, ...
+    + Advanced: Memory persistence (?)
 
 
-# 2 Gold-mining on Linux system
-## 2.1. Credential Hunting
-### Tư duy:
-- Dev để credential “tạm” khắp nơi.
-- Trên server, credential cho các dịch vụ như database thường bắt buộc để cleartext
-- Script tự động thường chứa password plaintext.
-- Dev / sys admin có thể để credential yếu hoặc reuse
+====
 
-### Các nguồn phổ biến:
-TODO hệ thống vhost
-
-- Bash history: .bash_history
-- SSH keys: ~/.ssh/id_rsa, authorized_keys
-- Config của service: config.php, .env
-- Git configuration: .git-credentials, .git/config
-- Backup files: *.bak, config.old
-- Process command lines: /proc/*/cmdline
-
-### Ví dụ
+# Thực hành
 - Tạo 1 script sử dụng os walkdir để tìm file có file name nằm trong list `goldmine = ["config.php", ".git-credentials", "id.rsa"]`. Lưu ý: walk dir khác walk dir đệ quy
 ```
 import os
@@ -213,18 +223,7 @@ if __name__ == '__main__':
 - Bài tập: Đọc bash history và trích xuất credential. Recommend iterate từng dòng.
 
 ## 2.2 Priv Escalation
-### Mindset:
-- Khi deploy sản phẩm product, sys admin có thể tạo ra sai sót
-- Product có thể cần nhiều permissions để thực hiện được chức năng. Điều này vi phạm quy tắc "least privilege" và tạo ra attack surface.
-- Không phải product nào cũng có hardening và audit cẩn thận
-- Product có thể thay đổi cấu hình tài nguyên hệ thống trong những lần cập nhật, phá vỡ hardening đã áp dụng.
-- Product vào trạng thái stable sẽ ít được sys admin cập nhật patch dẫn đến tồn tại exploitable từ unpatched services
 
-### Tactics
-- Mis-configuration dẫn đến lộ credential hoặc cho phép sửa đổi được tài nguyên hệ thống:
- + Cho phép sửa đổi cronjob hoặc service unit
- + Writable file / folder cho phép chèn mã độc
-- Cấp quá quyền cho phép: SUID binaries hoặc sudoders commands, Capabilities của file (Linux capability).
 TODO giari thích tại sao tìm trong default (usr/bin/), biến môi trường (add thêm?), opt (cài thêm)
 
 ### Example
@@ -495,35 +494,7 @@ Bài tập:
 - Enumerate namespace and Cgroup escape (container breakout)
 
 ## 2.3 Persistence
-- Tại sao cần persistence?
- + Duy trì quyền kiểm soát qua reboot, patch, hay incident response.
- + Đảm bảo access ngay cả khi credential bị đổi hoặc machine / service bị restart
-- Mindset:
- + Sẽ có những component sử dụng scripting, thực thi scripting. Ví dụ: ssh banner, hook script
- + On-event persistence: Chương trình được thực thi khi 1 event nhất định được thực hiện TODO hoàn thiện
- + Login persistence: chương trình được thực thi khi được boot TODO hoàn thiện
- + Vị trí càng ít người biết, càng khó bị phát hiện
-- Vị trí:
-    - **Activities:**
-    - Logon persistence
-        - System daemon
-        - X-11 auto start
-    - Schedule persistence:
-        - systemd timer
-        - cron
-    - Event trigger persistence:
-        - Shell config modification (`.bashrc`)
-        - Udev rules
-        - Hooking scripts (network hooking script for example)
-    **Resources**:
-    - **MySQL Plugin Load:** https://dev.mysql.com/doc/refman/8.4/en/plugin-loading.html
-    - **Systemd as user**: https://serverfault.com/questions/841099/systemd-grant-an-unprivileged-user-permission-to-alter-one-specific-service
-    - **System hook script locations:**
-        - `/etc/needrestart/hook.d/`
-        - `/etc/network/if-down.d/`
-        - `/etc/update-motd.d`
-    + Kernel module, bootloader, firmware, ...
-    + Advanced: Memory persistence (?)
+
 
 ### Example:
 - Thêm 1 entry persistence vào 1 bashrc (ở đây sử dụng ví dụ là `/tmp/.bashrc`).
