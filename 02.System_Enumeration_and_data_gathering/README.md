@@ -66,7 +66,9 @@ Trong khi đó, credential được lưu trữ trong file cũng rất đa dạng
 
 Bên cạnh việc thu thập và sử dụng giá trị của credential thu thập được, ta cũng cần phải nhớ rằng credential có thể được reuse lại ở nhiều hệ thống hoặc dịch vụ khác nhau. Hoặc đối với một số hệ thống / thiết bị đơn giản, credential có thể là mật khẩu yếu hoặc mật khẩu mặc định từ nhà sản xuất. Điều này dẫn đến việc các hệ thống / thiết bị hoặc dịch vụ khác có thể bị chiếm quyền kiểm soát mà không cần phải biết trước credential chính xác.
 
-## Priv esc: nâng cao
+## Privilege Escalation: nâng cao
+
+Privilege Escalation (leo thang đặc quyền) là một lớp lỗ hổng bảo mật trong đó một user hoặc tiến trình có thể thực hiện các hành động vượt ngoài phạm vi thẩm quyền được cấp ban đầu, dẫn đến việc kiểm soát các tài nguyên không thuộc quyền truy cập của thực thể đó. Hiện tượng này xảy ra khi chương trình hoặc các tài nguyên được chia sẻ bị cung cấp thừa quyền hạn, dẫn đến hành động được thực thi với đặc quyền mới.
 
 Khi sản phẩm được đưa vào quá trình vận hành, có thể có nhiều sai sót xảy ra dẫn đến lỗ hổng bảo mật:
 
