@@ -3,14 +3,6 @@ import posix
 import bitops
 
 const list_check_dir = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/opt/"]
-
-
-proc current_user_can_execute(file_stat: Stat): bool =
-    let file_mode = cast[cint](file_stat.st_mode)
-    
-    if bitand(file_mode, S_IXUSR) != 0:
-        return true
-    return false
     
     
 proc owner_not_current_user(file_stat: Stat): bool =
@@ -21,10 +13,10 @@ proc owner_not_current_user(file_stat: Stat): bool =
     return false
 
 
-proc file_has_uid_bit(file_stat: Stat): bool =
+proc excutable_uid_file(file_stat: Stat): bool =
     let file_mode = cast[cint](file_stat.st_mode)
     
-    if (bitand(file_mode, S_ISUID) != 0 or bitand(file_mode, S_ISGID) != 0):
+    if (bitand(file_mode, S_ISUID) != 0 or bitand(file_mode, S_ISGID) != 0) and bitand(file_mode, S_IXUSR) != 0:
         return true
     return false
     
@@ -36,7 +28,7 @@ proc find_suid_binary(path: string) =
             echo "Error getting stat of file ", file_path
             continue
 
-        if file_has_uid_bit(file_stat) and current_user_can_execute(file_stat) and owner_not_current_user(file_stat):
+        if excutable_uid_file(file_stat) and owner_not_current_user(file_stat):
             echo file_path
 
 
