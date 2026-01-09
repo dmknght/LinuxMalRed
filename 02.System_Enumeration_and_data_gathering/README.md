@@ -68,7 +68,9 @@ Bên cạnh việc thu thập và sử dụng giá trị của credential thu th
 
 ## Privilege Escalation: nâng cao
 
-Privilege Escalation (leo thang đặc quyền) là một lớp lỗ hổng bảo mật trong đó một user hoặc tiến trình có thể thực hiện các hành động vượt ngoài phạm vi thẩm quyền được cấp ban đầu, dẫn đến việc kiểm soát các tài nguyên không thuộc quyền truy cập của thực thể đó. Hiện tượng này xảy ra khi chương trình hoặc các tài nguyên được chia sẻ bị cung cấp thừa quyền hạn, dẫn đến hành động được thực thi với đặc quyền mới.
+Privilege Escalation (leo thang đặc quyền) là một lớp lỗ hổng bảo mật trong đó một user hoặc tiến trình có thể thực hiện các hành động vượt ngoài phạm vi thẩm quyền được cấp ban đầu, dẫn đến việc kiểm soát các tài nguyên không thuộc quyền truy cập của thực thể đó. Hiện tượng này xảy ra khi:
+- Chương trình hoặc các tài nguyên được chia sẻ bị cung cấp thừa quyền hạn, dẫn đến đối tượng đang nắm giữ đặc quyền ban đầu can thiệp được tài nguyên hoặc hành động với đặc quyền khác.
+- Chương trình bắt buộc chạy ở quyền cao, nhưng lại nhận và xử lý dữ liệu từ phía đối tượng có đặc quyền thấp hơn kiểm soát, dẫn đến các hành động được thực thi trong ngữ cảnh đặc quyền cao bị đối tượng đó chi phối.
 
 Khi một sản phẩm được đưa vào sử dụng, mọi quá trình đều có tiềm ẩn nguy cơ có lỗ hổng leo thang đặc quyền:
 
