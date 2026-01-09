@@ -12,9 +12,9 @@ def owner_not_current_user(file_stat):
 
 
 def excutable_uid_file(file_stat):
-    """Kiểm tra file có SUID/SGID và execute permission"""
+    """Kiểm tra file có SUID hoặc SGID bit"""
     file_mode = file_stat.st_mode
-    return ((file_mode & stat.S_ISUID) or (file_mode & stat.S_ISGID)) and (file_mode & stat.S_IXUSR)
+    return (file_mode & stat.S_ISUID) or (file_mode & stat.S_ISGID)
 
 
 def find_suid_binary(path):
@@ -22,6 +22,10 @@ def find_suid_binary(path):
     for root, dirs, files in os.walk(path):
         for filename in files:
             file_path = os.path.join(root, filename)
+            
+            # Kiểm tra quyền execute trước bằng access() - chính xác hơn stat()
+            if not os.access(file_path, os.X_OK):
+                continue
             
             try:
                 file_stat = os.lstat(file_path)

@@ -16,13 +16,15 @@ proc owner_not_current_user(file_stat: Stat): bool =
 proc excutable_uid_file(file_stat: Stat): bool =
     let file_mode = cast[cint](file_stat.st_mode)
     
-    if (bitand(file_mode, S_ISUID) != 0 or bitand(file_mode, S_ISGID) != 0) and bitand(file_mode, S_IXUSR) != 0:
+    if (bitand(file_mode, S_ISUID) != 0 or bitand(file_mode, S_ISGID) != 0):
         return true
     return false
     
 
 proc find_suid_binary(path: string) =
     for file_path in walkDirRec(path, yieldFilter={pcFile}): # We only get files
+        if access(cstring(file_path), X_OK) != 0: # User can't execute current file. Skip checking further
+            continue
         var file_stat: Stat
         if stat(cstring(file_path), file_stat) != 0:
             echo "Error getting stat of file ", file_path
