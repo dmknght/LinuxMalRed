@@ -51,14 +51,25 @@ Trong quá trình thực hiện, các hành động có thể có những hành 
 
 
 ## Credential collection => "mỏ vàng"
-- Ở level daemon user: thu thập được credential được ưeb app sử dụng: credential truy cập db của ưeb, có thể crednetial login vào web panel, ... thậm chí credential được web app sử dụng để kết nối tới dịch vụ bên ngoài. Ngoài ra, dev có thể lưu những credential tạm như trong source code, ...
-- level normal user: file password (dùng pahanf mềm uqanr lý password lưu), trình duyệt, các desktop app / web app, ... , ssh key, .. (tùy thuộc server hay desktop); tìm trong history của bash hoặc db command (ví dụ set password cố lưu history log của interpreter SQL)
-- git conffig, backup file, command đang chạy, ... (todo check vhost)
-- script chạy theo schedule có thể có crednetial plaintext do sys-admin sử dụng.
-- Credential yếu, reuse trong các hệ thống khác nhau
+[Theo định nghĩa của NIST](https://csrc.nist.gov/glossary/term/credential) thì credential là bằng chứng xác nhận sự tin cậy và thẩm quyền của một người dùng. Nó có thể là mật khẩu, token, câu hỏi bảo mật, vân vân...
+
+Nếu xét trên tài nguyên hệ thống, credential có thể được lưu trữ trong file hoặc memory. Đối với in-memory, ta có một số trường hợp như sau:
+- Credential có thể được lưu lại trong phân vùng RAM. Nó có thể là giá trị của một biến được chương trình đang chạy sử dụng, hoặc chương trình đã kết thúc nhưng giá trị của biến vẫn nằm trong memory. Ví dụ: [Lỗ hổng CVE-2023-32784 nằm trong Keepass](https://nvd.nist.gov/vuln/detail/cve-2023-32784).
+- Giá trị in-memory này có thể được chia sẻ chung như clipboard, hoặc lưu trữ trong cache files tùy theo cách chương trình được thiết kế. Threat actor có thể đánh cắp credential nếu người dùng thực hiện hành động copy.
+- Ngoài ra, trong nhiều trường hợp, credential còn nằm trong chính các flags khởi tạo một chương trình và được map vào file cmdline nằm trong procfs.
+
+Trong khi đó, credential được lưu trữ trong file cũng rất đa dạng:
+- Credential được lưu trữ trong các dịch vụ của hệ thống như database, web, ... Trong đó, các file configuration của web thường để mật khẩu hoặc token ở trạng thái cleartext. Database cũng có thể có commandline history chứa giá trị mật khẩu ở dạng cleartext. Trong vài trường hợp hiếm hoi, source code cũng có thể chứa hardcoded password.
+- Người dùng thường có thể có credential nằm trong SSH key, trình duyệt hoặc các ứng dụng hàng ngày khác, hoặc đôi khi nằm trong history của SHELL đang sử dụng.
+- Credential của hệ thống như file `shadow`, file cấu hình kết nối wifi, ...
+- Các file backup hệ thống hoàn toàn có thể chứa credential. Các script chạy định kỳ cũng hoàn toàn có thể có credential nhằm xác thực cho dịch vụ hoặc cấp phép quyền hạn cho script để thực hiện chức năng.
+
+Bên cạnh việc thu thập và sử dụng giá trị của credential thu thập được, ta cũng cần phải nhớ rằng credential có thể được reuse lại ở nhiều hệ thống hoặc dịch vụ khác nhau. Hoặc đối với một số hệ thống / thiết bị đơn giản, credential có thể là mật khẩu yếu hoặc mật khẩu mặc định từ nhà sản xuất. Điều này dẫn đến việc các hệ thống / thiết bị hoặc dịch vụ khác có thể bị chiếm quyền kiểm soát mà không cần phải biết trước credential chính xác.
 
 ## Priv esc: nâng cao
+
 Khi sản phẩm được đưa vào quá trình vận hành, có thể có nhiều sai sót xảy ra dẫn đến lỗ hổng bảo mật:
+
 1. Hệ thống không được cập nhật security patches
 2. Hệ thống không được audit cẩn thận hoặc không được hardening đúng mức.
 3. Cấp thừa quyền để thực hiện một số chức năng nhất định dẫn đến low privilege user (hoặc daemon user) có thể can thiệp được resource của user khác. (một trong những mục tiêu sẽ là thay đổi luồng logic hoạt động của 1 chương trình để có thể nâng cấp khả năng kiểm soát hệ thống)
