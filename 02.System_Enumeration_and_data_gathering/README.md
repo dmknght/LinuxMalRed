@@ -70,22 +70,16 @@ Bên cạnh việc thu thập và sử dụng giá trị của credential thu th
 
 Privilege Escalation (leo thang đặc quyền) là một lớp lỗ hổng bảo mật trong đó một user hoặc tiến trình có thể thực hiện các hành động vượt ngoài phạm vi thẩm quyền được cấp ban đầu, dẫn đến việc kiểm soát các tài nguyên không thuộc quyền truy cập của thực thể đó. Hiện tượng này xảy ra khi chương trình hoặc các tài nguyên được chia sẻ bị cung cấp thừa quyền hạn, dẫn đến hành động được thực thi với đặc quyền mới.
 
-Khi sản phẩm được đưa vào quá trình vận hành, có thể có nhiều sai sót xảy ra dẫn đến lỗ hổng bảo mật:
+Khi một sản phẩm được đưa vào sử dụng, mọi quá trình đều có tiềm ẩn nguy cơ có lỗ hổng leo thang đặc quyền:
 
-1. Hệ thống không được cập nhật security patches
-2. Hệ thống không được audit cẩn thận hoặc không được hardening đúng mức.
-3. Cấp thừa quyền để thực hiện một số chức năng nhất định dẫn đến low privilege user (hoặc daemon user) có thể can thiệp được resource của user khác. (một trong những mục tiêu sẽ là thay đổi luồng logic hoạt động của 1 chương trình để có thể nâng cấp khả năng kiểm soát hệ thống)
-4. Cập nhật và áp dụng phiên bản mới có thể phá vỡ cấu hình cũ (backward compability) hoặc chức năng được cập nhật xuất hiện lỗ hổng mới.
+1. Quá trình triển khai: Việc cài đặt các thành phần yêu cầu phải sửa đổi tài nguyên hệ thống. Những hành động này có thể bao gồm cấp phát thừa quyền truy cập của một tài nguyên, dẫn tới khả năng bị can thiệp; hoặc cấp phát thừa quyền hạn cho một chương trình, dẫn tới việc chức năng có thể bị sử dụng để tác động lên tài nguyên hệ thống.
+2. Quá trình vận hành: Việc vận hành hệ thống đòi hỏi hệ thống phải càng ổn định càng tốt. Điều này dẫn đến hệ thống không được cập nhật đầy đủ các bản vá. Ngoài ra, nếu chương trình được cập nhật cũng có thể có những thay đổi lên tài nguyên mà trước đó không hề có, gây ra nguy cơ tồn tại lỗ hổng bảo mật.
 
-Ở trong module này, ta chỉ thực hiện công việc thu thập các điểm yếu (real world software exploitation học ở module sau)
+Vì vậy, một threat actor muốn thực hiện khai thác leo thang đặc quyền sẽ phải tìm kiếm:
 
-=> Tactic thực hiện (TODO chuyển sang phần practice)
-- Mis-configuration dẫn đến lộ credential hoặc cho phép sửa đổi được tài nguyên hệ thống:
- + Cho phép sửa đổi cronjob hoặc service unit
- + Writable file / folder cho phép chèn mã độc
-- Cấp quá quyền cho phép: SUID binaries hoặc sudoders commands, Capabilities của file (Linux capability).
-TODO giari thích tại sao tìm trong default (usr/bin/), biến môi trường (add thêm?), opt (cài thêm)
-TODO: tận dụng tinh năng hệ thống và một số misconfig khác để thực hiện priv esc?
+1. Xác định chương trình hoặc dịch vụ đang được cấp đặc quyền cao hơn mà không được cập nhật.
+2. Xác định tài nguyên có thể kiểm soát được nhưng lại được sử dụng bởi đối tượng khác, ví dụ như schedule hoặc cronjob có thể sửa đổi được.
+3. Xác định chương trình được phép thực thi với đặc quyền khác, ví dụ chương trình có SUID/GUID, có capabilities, hoặc cho phép thực thi trong sudoers hay polkit.
 
 
 ## lateral movement: đi xa
