@@ -47,7 +47,7 @@ Mục tiêu tìm kiếm:
 2. Nếu sử dụng phương pháp chạy lệnh hệ thống: show nhiều thứ trong process tree
 3. in memory: (liệu có vấn đề gì không?)
 
-Trong quá trình thực hiện, các hành động có thể có những hành vi khác nhau từ đọc file cho đến ghi file. Các hành động này chiếm dụng tài nguyên và có thể gây noise hệ thống, dễ bị phát hiện => cần stealthy.
+Trong quá trình thực hiện, các hành động có thể có những hành vi khác nhau như ghi file, kiểm tra metadata của file, đọc dữ liệu file. Các hành động này chiếm dụng tài nguyên nên có thể gây ra chậm máy, treo máy, hoặc gây noise tới các thành phần bảo mật. Để thực hiện thành công, ta cần cân bằng giữa thu thập dữ liệu và đảm bảo stealthy.
 
 
 ## Credential collection => "mỏ vàng"
@@ -65,29 +65,6 @@ Trong khi đó, credential được lưu trữ trong file cũng rất đa dạng
 - Các file backup hệ thống hoàn toàn có thể chứa credential. Các script chạy định kỳ cũng hoàn toàn có thể có credential nhằm xác thực cho dịch vụ hoặc cấp phép quyền hạn cho script để thực hiện chức năng.
 
 Bên cạnh việc thu thập và sử dụng giá trị của credential thu thập được, ta cũng cần phải nhớ rằng credential có thể được reuse lại ở nhiều hệ thống hoặc dịch vụ khác nhau. Hoặc đối với một số hệ thống / thiết bị đơn giản, credential có thể là mật khẩu yếu hoặc mật khẩu mặc định từ nhà sản xuất. Điều này dẫn đến việc các hệ thống / thiết bị hoặc dịch vụ khác có thể bị chiếm quyền kiểm soát mà không cần phải biết trước credential chính xác.
-
-## Privilege Escalation: nâng cao
-
-Privilege Escalation (leo thang đặc quyền) là một lớp lỗ hổng bảo mật trong đó một user hoặc tiến trình có thể thực hiện các hành động vượt ngoài phạm vi thẩm quyền được cấp ban đầu, dẫn đến việc kiểm soát các tài nguyên không thuộc quyền truy cập của thực thể đó. Hiện tượng này xảy ra khi:
-- Chương trình hoặc các tài nguyên được chia sẻ bị cung cấp thừa quyền hạn, dẫn đến đối tượng đang nắm giữ đặc quyền ban đầu can thiệp được tài nguyên hoặc hành động với đặc quyền khác.
-- Chương trình bắt buộc chạy ở quyền cao, nhưng lại nhận và xử lý dữ liệu một cách không an toàn từ phía đối tượng có đặc quyền thấp hơn kiểm soát, dẫn đến các hành động được thực thi trong ngữ cảnh đặc quyền cao bị đối tượng đó chi phối.
-
-Khi một sản phẩm được đưa vào sử dụng, mọi quá trình đều có tiềm ẩn nguy cơ có lỗ hổng leo thang đặc quyền:
-
-1. Quá trình triển khai: Việc cài đặt các thành phần yêu cầu phải sửa đổi tài nguyên hệ thống. Những hành động này có thể bao gồm cấp phát thừa quyền truy cập của một tài nguyên, dẫn tới khả năng bị can thiệp; hoặc cấp phát thừa quyền hạn cho một chương trình, dẫn tới việc chức năng có thể bị sử dụng để tác động lên tài nguyên hệ thống.
-2. Quá trình vận hành: Việc vận hành hệ thống đòi hỏi hệ thống phải càng ổn định càng tốt. Điều này dẫn đến hệ thống không được cập nhật đầy đủ các bản vá. Ngoài ra, nếu chương trình được cập nhật cũng có thể có những thay đổi lên tài nguyên mà trước đó không hề có, gây ra nguy cơ tồn tại lỗ hổng bảo mật.
-
-Vì vậy, một threat actor muốn thực hiện khai thác leo thang đặc quyền sẽ phải tìm kiếm:
-
-1. Xác định chương trình hoặc dịch vụ đang được cấp đặc quyền cao hơn mà không được cập nhật.
-2. Xác định tài nguyên có thể kiểm soát được nhưng lại được sử dụng bởi đối tượng khác, ví dụ như schedule hoặc cronjob có thể sửa đổi được.
-3. Xác định chương trình được phép thực thi với đặc quyền khác, ví dụ chương trình có SUID/GUID, có capabilities, hoặc cho phép thực thi trong sudoers hay polkit.
-
-
-## lateral movement: đi xa
-- Ở level daemon user: vẫn có thể xem được netstat để xem connection nội bộ, hoặc chạy được tool để scan trong network range
-- vẫn có thể xem xét một vài thông tin cơ bản
-- nếu có ưeb => xem được các thông tin về db, vhost, container, ... (hoặc credential tới các dịch vụ khác ví dụ cloud)
 
 ## Persistence: Tìm kiếm vị trí mà threat actor có thể truy cập và kiểm soát
 Tại sao cần persistence?
@@ -127,6 +104,37 @@ Persistence ở những vị trí nào?
     + Kernel module, bootloader, firmware, ...
     + Advanced: Memory persistence (?)
 
+## Privilege Escalation: nâng cao
+
+Privilege Escalation (leo thang đặc quyền) là một lớp lỗ hổng bảo mật trong đó một user hoặc tiến trình có thể thực hiện các hành động vượt ngoài phạm vi thẩm quyền được cấp ban đầu, dẫn đến việc kiểm soát các tài nguyên không thuộc quyền truy cập của thực thể đó. Hiện tượng này xảy ra khi:
+- Chương trình hoặc các tài nguyên được chia sẻ bị cung cấp thừa quyền hạn, dẫn đến đối tượng đang nắm giữ đặc quyền ban đầu can thiệp được tài nguyên hoặc hành động với đặc quyền khác.
+- Chương trình bắt buộc chạy ở quyền cao, nhưng lại nhận và xử lý dữ liệu một cách không an toàn từ phía đối tượng có đặc quyền thấp hơn kiểm soát, dẫn đến các hành động được thực thi trong ngữ cảnh đặc quyền cao bị đối tượng đó chi phối.
+
+Khi một sản phẩm được đưa vào sử dụng, mọi quá trình đều có tiềm ẩn nguy cơ có lỗ hổng leo thang đặc quyền:
+
+1. Quá trình triển khai: Việc cài đặt các thành phần yêu cầu phải sửa đổi tài nguyên hệ thống. Những hành động này có thể bao gồm cấp phát thừa quyền truy cập của một tài nguyên, dẫn tới khả năng bị can thiệp; hoặc cấp phát thừa quyền hạn cho một chương trình, dẫn tới việc chức năng có thể bị sử dụng để tác động lên tài nguyên hệ thống.
+2. Quá trình vận hành: Việc vận hành hệ thống đòi hỏi hệ thống phải càng ổn định càng tốt. Điều này dẫn đến hệ thống không được cập nhật đầy đủ các bản vá. Ngoài ra, nếu chương trình được cập nhật cũng có thể có những thay đổi lên tài nguyên mà trước đó không hề có, gây ra nguy cơ tồn tại lỗ hổng bảo mật.
+
+Bản chất leo thang đặc quyền là kiểm soát hành động với đặc quyền mới. Vì vậy, khai thác leo thang đặc quyền có thể sẽ overlap với các technique khác như software exploitation, credential attack, persistence, ... Một threat actor muốn thực hiện khai thác leo thang đặc quyền sẽ phải:
+
+1. Xác định chương trình hoặc dịch vụ đang được cấp đặc quyền cao hơn mà không được cập nhật.
+2. Xác định tài nguyên có thể kiểm soát được nhưng lại được sử dụng bởi đối tượng khác, ví dụ như schedule hoặc cronjob có thể sửa đổi được.
+3. Xác định chương trình được phép thực thi với đặc quyền khác, ví dụ chương trình có SUID/GUID, có capabilities, hoặc cho phép thực thi trong sudoers hay polkit.
+
+Các thông tin được thu thập sẽ được sử dụng để phân tích và đưa vào khai thác. Trong khuôn khổ module này, ta sẽ tập trung vào vấn đề tìm kiếm các điểm yếu trong hệ thống. Việc khai thác lỗ hổng nhằm leo thang đặc quyền sẽ được nghiên cứu ở phần sau.
+
+## lateral movement: đi xa
+- Ở level daemon user: vẫn có thể xem được netstat để xem connection nội bộ, hoặc chạy được tool để scan trong network range
+- vẫn có thể xem xét một vài thông tin cơ bản
+- nếu có ưeb => xem được các thông tin về db, vhost, container, ... (hoặc credential tới các dịch vụ khác ví dụ cloud)
+
+
+## Connection, Execution and Extrl
+- Connection & execution: 
+1. Remind phần reverse shell
+2. remote execute, c2 framework
+3. đánh cắp dữ liệu
+4. Giới thiệu tunneling
 
 ====
 
