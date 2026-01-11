@@ -66,7 +66,7 @@ Trong khi đó, credential được lưu trữ trong file cũng rất đa dạng
 
 Bên cạnh việc thu thập và sử dụng giá trị của credential thu thập được, ta cũng cần phải nhớ rằng credential có thể được reuse lại ở nhiều hệ thống hoặc dịch vụ khác nhau. Hoặc đối với một số hệ thống / thiết bị đơn giản, credential có thể là mật khẩu yếu hoặc mật khẩu mặc định từ nhà sản xuất. Điều này dẫn đến việc các hệ thống / thiết bị hoặc dịch vụ khác có thể bị chiếm quyền kiểm soát mà không cần phải biết trước credential chính xác.
 
-## Persistence: Tìm kiếm vị trí mà threat actor có thể truy cập và kiểm soát
+## Persistence & maintaining access: Tìm kiếm vị trí mà threat actor có thể truy cập và kiểm soát
 Tại sao cần persistence?
     - Duy trì quyền kiểm soát qua reboot, patch, hay incident response.
     - Đảm bảo access ngay cả khi credential bị đổi hoặc machine / service bị restart
