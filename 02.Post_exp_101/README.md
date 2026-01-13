@@ -108,7 +108,7 @@ Persistence ở những vị trí nào?
 
 Privilege Escalation (leo thang đặc quyền) là một lớp lỗ hổng bảo mật trong đó một user hoặc tiến trình có thể thực hiện các hành động vượt ngoài phạm vi thẩm quyền được cấp ban đầu, dẫn đến việc kiểm soát các tài nguyên không thuộc quyền truy cập của thực thể đó. Hiện tượng này xảy ra khi:
 - Chương trình hoặc các tài nguyên được chia sẻ bị cung cấp thừa quyền hạn, dẫn đến đối tượng đang nắm giữ đặc quyền ban đầu can thiệp được tài nguyên hoặc hành động với đặc quyền khác.
-- Chương trình bắt buộc chạy ở quyền cao, nhưng lại nhận và xử lý dữ liệu một cách không an toàn từ phía đối tượng có đặc quyền thấp hơn kiểm soát, dẫn đến các hành động được thực thi trong ngữ cảnh đặc quyền cao bị đối tượng đó chi phối.
+- Chương trình bắt buộc chạy ở quyền cao (ví dụ: system service, driver), nhưng lại nhận và xử lý dữ liệu một cách không an toàn từ phía đối tượng có đặc quyền thấp hơn (ví dụ: applet quản lý bluetooth hoặc kết nối mạng chạy ở quyền logon user); dẫn đến các hành động được thực thi bằng đặc quyền cao bị chi phối bởi đối tượng có đặc quyền thấp.
 
 Khi một sản phẩm được đưa vào sử dụng, mọi quá trình đều có tiềm ẩn nguy cơ có lỗ hổng leo thang đặc quyền:
 
