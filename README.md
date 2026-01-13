@@ -32,3 +32,10 @@ Hardware Security Modules (HSM): Tìm cách extract key từ HSM nếu có.
 Hardening Bypass: Kỹ thuật bypass SELinux, AppArmor, seccomp.
 
 Hardware-Based Escalation: Khai thác lỗi phần cứng (CPU, PCI devices).
+
+
+Cách học: (đây chỉ là guideline )
+- Mục đích là học lập trình + security để hiểu rõ hơn về lập trình, hệ thống (linux), vấn đề security
+- Sử dụng mindset tấn công có thể tìm ra cách phòng thủ (dựa trên dấu vết, phương thức tấn công, ...)
+- Mỗi tactic được sử dụng đều là 1 bài toán. Mục đích của project này là đưa ra tư duy giải quyết vấn đề (mindset) + phương hướng giải quyết (context, features, resources, ...). Cách giải quyết **không** nên giới hạn trong một ngôn ngữ lập trình cụ thể. Recommend nên sử dụng một ngôn ngữ lập trình ngoài python để thử giải quyết bài toán.
+
